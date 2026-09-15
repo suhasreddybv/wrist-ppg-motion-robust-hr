@@ -1,0 +1,26 @@
+# Data never lives in git. Only data/README.md is tracked.
+data/*
+!data/README.md
+
+# Model artefacts and large outputs
+*.h5
+*.pt
+*.pkl
+*.onnx
+*.npz
+
+# Environments and secrets
+.venv/
+venv/
+.env
+.env.*
+*.pem
+*.key
+
+# Python / editors / OS
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store
+.vscode/
+.idea/
