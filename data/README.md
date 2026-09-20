@@ -26,5 +26,6 @@ Checked on the downloaded files on 16 Sep 2026, and enforced by `src/data/loader
 - **Chest EMG, EDA and Temp are constant placeholders** (−1.5, 0 and −273.15) and are dropped.
 - **Duplicate R-peak indices:** S6 has 3, S14 has 1, everyone else 0. HR labels are smooth through all of them, so they were not used to compute ground truth. The loader removes and counts them.
 - **BVP has no DC component.** A 60 s seated-rest segment of S1 has mean 0.084 against SD 41.95; the whole record has mean −0.002. Perfusion index cannot be computed.
+- **Five subjects have odd-length records** (S2, S3, S5, S7, S15), leaving a 1 s tail that cannot form an 8 s window. Label counts still match the window count exactly.
 - **Fitzpatrick skin types** are 2 (S15), 4 (S4, S9, S10) and 3 (everyone else). No type I, V or VI.
 - Units for the RespiBAN chest ECG, ACC and Resp are not stated in the dataset readme and are recorded as unspecified.
