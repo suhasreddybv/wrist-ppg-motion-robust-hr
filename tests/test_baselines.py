@@ -3,13 +3,17 @@ import pytest
 
 from src.eval import loso
 from src.eval.loso import (
+    POOLED_ALL,
+    POOLED_NO_TRANSIENT,
     SubjectArrays,
+    clip_fraction_rows,
     loso_predictions,
     per_activity_rows,
     per_subject_rows,
 )
-from src.eval.metrics import bland_altman, mae, pearson_r, rmse
+from src.eval.metrics import bland_altman, mae, mape, pearson_r, rmse
 from src.models.baselines import (
+    ZERO_PAD_NFFT,
     bin_width_bpm,
     global_mean_hr,
     previous_window_hr,
@@ -57,6 +61,18 @@ def test_spectral_peak_locks_onto_a_stronger_motion_component():
     assert abs(spectral_peak_hr(w[None, :], fs=FS)[0] - cadence) <= bin_width_bpm()
 
 
+def test_zero_padding_gives_a_finer_grid_but_no_new_resolution():
+    """b2-zp must sharpen a clean peak and leave a motion-locked one where it was."""
+    assert bin_width_bpm(nfft=ZERO_PAD_NFFT) < 1.0
+    clean = _window(71.0)[None, :]
+    coarse = spectral_peak_hr(clean, fs=FS)[0]
+    fine = spectral_peak_hr(clean, fs=FS, nfft=ZERO_PAD_NFFT)[0]
+    assert abs(fine - 71.0) < abs(coarse - 71.0)
+
+    locked = (_window(150.0) + 4 * _window(110.0))[None, :]
+    assert abs(spectral_peak_hr(locked, fs=FS, nfft=ZERO_PAD_NFFT)[0] - 110.0) < 2.0
+
+
 def test_global_mean_hr():
     assert global_mean_hr(np.array([60.0, 80.0, 100.0])) == pytest.approx(80.0)
 
@@ -68,6 +84,12 @@ def test_previous_window_hr_shifts_and_uses_fallback():
 
 
 # --- metrics -----------------------------------------------------------------
+
+def test_mape_is_relative():
+    """The same 10 bpm error is 16.7% at 60 bpm and 6.2% at 160."""
+    assert mape(np.array([60.0]), np.array([70.0])) == pytest.approx(100 / 6, abs=1e-6)
+    assert mape(np.array([160.0]), np.array([170.0])) == pytest.approx(6.25, abs=1e-6)
+
 
 def test_metrics_known_values():
     y = np.array([60.0, 70.0, 80.0])
@@ -133,10 +155,47 @@ def test_pooled_includes_transients_and_activity_rows_exclude_them():
     assert pooled["n_windows"] == 30                       # all windows of all three subjects
 
 
+def test_pooled_rows_reported_with_and_without_transients():
+    subs = _fake_subjects()
+    rows = {(r["method"], r["activity"]): r for r in per_activity_rows(subs, loso_predictions(subs))}
+    assert rows[("b2", POOLED_ALL)]["n_windows"] == 30
+    assert rows[("b2", POOLED_NO_TRANSIENT)]["n_windows"] == 24   # 2 transient windows each
+    assert rows[("b2", POOLED_ALL)]["n_folds"] == 3
+
+
+def test_both_aggregations_are_reported_and_differ_when_folds_are_unequal():
+    subs = _fake_subjects()
+    row = next(r for r in per_activity_rows(subs, loso_predictions(subs))
+               if r["method"] == "b2" and r["activity"] == POOLED_ALL)
+    assert {"mae_mean_of_folds", "mae_pooled", "mape_mean_of_folds", "mape_pooled",
+            "mape_sd_across_folds", "rmse_pooled"} <= set(row)
+    # A: |61-60|=1, B: |95-80|=15, C: |101-100|=1 -> fold mean 5.667, pooled the same here
+    assert row["mae_mean_of_folds"] == pytest.approx(17 / 3, abs=1e-3)
+
+
+def test_per_subject_rows_cover_both_scopes():
+    subs = _fake_subjects()
+    rows = {(r["method"], r["subject"], r["scope"]): r
+            for r in per_subject_rows(subs, loso_predictions(subs))}
+    assert rows[("b2", "A", "all")]["n_windows"] == 10
+    assert rows[("b2", "A", "no_transient")]["n_windows"] == 8
+    assert rows[("b2", "A", "all")]["mape"] > 0
+
+
+def test_clip_fraction_rows_report_distribution():
+    subs = _fake_subjects()
+    subs[1] = SubjectArrays("B", subs[1].hr, subs[1].activity, subs[1].clipped, subs[1].b2,
+                            subs[1].b2_zp, clip_fraction=np.r_[np.zeros(8), np.full(2, 0.25)])
+    rows = {r["activity"]: r for r in clip_fraction_rows(subs)}
+    assert "working" in rows
+    assert rows["working"]["windows_flagged_pct"] > 0
+    assert rows["working"]["max_clip_fraction_pct"] == pytest.approx(25.0)
+
+
 def test_b2_noclip_drops_flagged_windows_only():
     subs = _fake_subjects()
     preds = loso_predictions(subs)
-    rows = {(r["method"], r["subject"]): r for r in per_subject_rows(subs, preds)}
+    rows = {(r["method"], r["subject"]): r for r in per_subject_rows(subs, preds) if r["scope"] == "all"}
     assert rows[("b2", "B")]["n_windows"] == 10
     assert rows[("b2_noclip", "B")]["n_windows"] == 8
     assert rows[("b2", "A")]["n_windows"] == rows[("b2_noclip", "A")]["n_windows"] == 10
@@ -146,6 +205,7 @@ def test_oracle_flag_is_carried_into_outputs():
     subs = _fake_subjects()
     rows = per_subject_rows(subs, loso_predictions(subs))
     assert all(r["oracle"] for r in rows if r["method"] == "b1")
+    assert "b2_zp" in loso.METHOD_LABELS and loso.BASELINE_FOR_STAGE4 == "b2_zp"
     assert not any(r["oracle"] for r in rows if r["method"] != "b1")
     assert "ORACLE" in loso.METHOD_LABELS["b1"]
 
@@ -158,9 +218,13 @@ def test_b2_is_accurate_at_rest_and_degrades_with_motion():
     subs = build = loso.build_subject_arrays(["S1", "S2", "S3"])
     preds = loso_predictions(subs)
     by = {(r["method"], r["activity"]): r for r in per_activity_rows(subs, preds)}
-    assert by[("b2", "sitting")]["mae"] < 8.0
-    assert by[("b2", "stairs")]["mae"] > by[("b2", "sitting")]["mae"]
+    assert by[("b2", "sitting")]["mae_mean_of_folds"] < 8.0
+    assert by[("b2", "stairs")]["mae_mean_of_folds"] > by[("b2", "sitting")]["mae_mean_of_folds"]
     for activity in ("sitting", "stairs", "cycling", "walking"):
-        assert by[("b1", activity)]["mae"] < by[("b2", activity)]["mae"], activity
-        assert by[("b2", activity)]["mae"] >= 3.0, activity
+        assert by[("b1", activity)]["mae_mean_of_folds"] < by[("b2", activity)]["mae_mean_of_folds"], activity
+        assert by[("b2", activity)]["mae_mean_of_folds"] >= 3.0, activity
+    # zero-padding must not "fix" motion lock (stop condition from the 21 Sep follow-ups)
+    for activity in ("stairs", "table soccer", "walking"):
+        gain = by[("b2", activity)]["mae_mean_of_folds"] - by[("b2_zp", activity)]["mae_mean_of_folds"]
+        assert gain <= 3.0, (activity, gain)
     assert len(build) == 3
