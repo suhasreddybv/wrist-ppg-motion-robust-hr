@@ -4,7 +4,7 @@ Heart-rate estimation from wrist PPG during real-world movement on PPG-DaLiA, wi
 
 **Result.** _Pending. The per-activity MAE table against a naive spectral-peak baseline and Reiss et al. (2019) goes here once evaluation lands (by 4 Oct 2026)._
 
-**Status:** Stages 0–3 are done — validated data layer, label-aligned windowing, band-pass with signal quality, and the three LOSO baselines below. Motion compensation (spectral masking, adaptive cancellation, peak tracking) follows.
+**Status:** Stages 0–3 are done — validated data layer, label-aligned windowing, band-pass with signal quality, and the four LOSO baselines below. Motion compensation (spectral masking, adaptive cancellation, peak tracking) follows.
 
 ## Data layer (Stage 0)
 
@@ -51,33 +51,55 @@ The ordering is what it should be: sitting best, walking and stairs worst. Note 
 
 ## Baselines (Stage 3)
 
-Three baselines, leave-one-subject-out over 15 folds, before any motion handling. Anything a method needs beyond the test subject's own signal — b0's constant, b1's first-window fallback — comes from that fold's training subjects only. Cells average per-subject MAE across folds, so a long recording does not outweigh a short one, and each carries its fold count: S6 has no lunch, walking or working, so those rows have 14 folds.
+Four baselines, leave-one-subject-out over 15 folds, before any motion handling. Anything a method needs beyond the test subject's own signal — b0's constant, b1's first-window fallback — comes from that fold's training subjects only.
 
-| Activity | Folds | Windows | b0 mean HR | b1 previous-window *(oracle)* | **b2 spectral peak** |
-|---|---|---|---|---|---|
-| sitting | 15 | 4,569 | 29.28 | 1.09 | **3.90** |
-| stairs | 15 | 3,239 | 30.95 | 1.12 | **39.32** |
-| table soccer | 15 | 2,310 | 14.02 | 1.85 | **33.54** |
-| cycling | 15 | 3,473 | 33.74 | 0.96 | **30.96** |
-| driving | 15 | 6,843 | 14.11 | 1.71 | **14.96** |
-| lunch | 14 | 13,554 | 13.70 | 1.71 | **15.50** |
-| walking | 14 | 4,697 | 15.46 | 1.25 | **29.66** |
-| working | 14 | 8,497 | 17.02 | 1.40 | **9.89** |
-| **Pooled** (transients included) | 15 | 64,697 | 18.57 | 1.49 | **20.06** |
+**Aggregation.** The MAE column below is the **mean of per-fold MAEs**: each subject contributes once, so a long recording does not outweigh a short one. The window-pooled figure is reported beside it in the CSV as `mae_pooled` (and `mape_pooled`); the two agree closely (they differ by at most 2.4 bpm, on the smallest cell — `b2_noclip` table soccer — and by under 1.1 bpm on every other row). Every cell carries its fold count — S6 has no lunch, walking or working, so those rows have 14 folds.
 
-MAE in bpm. b1 uses ground truth and is an oracle reference, not a deployable method; it says how much of the task is pure temporal smoothness (pooled 1.49 bpm). Full tables, including RMSE, per-fold spread and worst fold, are in `results/baselines_per_activity.csv` and `results/baselines_per_subject.csv`.
+**Relative error.** MAPE is reported alongside MAE, because a 5 bpm error means something different at 60 and at 160 bpm. It is the same framing as MARD for glucose sensors, and it matters here: the subject with the worst MAE is far less extreme in MAPE.
 
-**The naive spectral peak is worse than predicting a constant.** Pooled, b2 is 20.06 bpm against b0's 18.57. That is the point of the repo: with no motion handling, the argmax follows the motion rather than the heart. Three things confirm b2 is implemented correctly rather than broken:
+| Activity | Folds | Windows | b0 mean HR | b1 *(oracle)* | b2 peak | **b2-zp** | b2-zp MAPE |
+|---|---|---|---|---|---|---|---|
+| sitting | 15 | 4,569 | 29.28 | 1.09 | 3.90 | **2.82** | 4.5% |
+| stairs | 15 | 3,239 | 30.95 | 1.12 | 39.32 | **38.17** | 31.6% |
+| table soccer | 15 | 2,310 | 14.02 | 1.85 | 33.54 | **33.27** | 34.9% |
+| cycling | 15 | 3,473 | 33.74 | 0.96 | 30.96 | **29.75** | 23.4% |
+| driving | 15 | 6,843 | 14.11 | 1.71 | 14.96 | **13.42** | 15.3% |
+| lunch | 14 | 13,554 | 13.70 | 1.71 | 15.50 | **14.26** | 16.4% |
+| walking | 14 | 4,697 | 15.46 | 1.25 | 29.66 | **29.61** | 28.6% |
+| working | 14 | 8,497 | 17.02 | 1.40 | 9.89 | **8.62** | 10.3% |
+| **Pooled, transients included** | 15 | 64,697 | 18.57 | 1.49 | 20.06 | **18.98** | 19.2% |
+| **Pooled, transients excluded** | 15 | 47,182 | 19.12 | 1.46 | 18.49 | **17.35** | 17.6% |
 
-- **At rest it is nearly exact.** Sitting MAE is 3.90 bpm, and 89.5% of sitting windows land within one FFT bin, with a median error of −0.1 bpm.
-- **The errors are structured, not random.** During stairs the median error is −32.8 bpm — the estimate sits *below* the true HR, locked onto a lower-frequency motion component. 13–16% of stairs and walking windows land on a 2× or ½× harmonic.
-- **It never beats the oracle** on any activity, which is the spec's leakage check.
+MAE in bpm. Transient windows are 17,515 of 64,697 (27%), so both pooled figures are given. b1 uses ground truth and is an oracle reference, not a deployable method; pooled at 1.49 bpm, it shows how much of this task is pure temporal smoothness. Full tables — pooled and fold-mean MAE, MAPE, RMSE, per-fold spread, worst fold — are in `results/baselines_per_activity.csv` and `results/baselines_per_subject.csv`.
 
-Resolution: an 8 s window at 64 Hz gives 1/8 Hz bins, or **7.5 bpm**, so b2 is quantised and has a floor near 1.9 bpm MAE even with a perfect peak. Sitting is already close to it.
+**b2-zp is the reference for Stage 4.** It is b2 with the FFT zero-padded to 4,096 points, so the peak is located on a 0.94 bpm grid instead of a 7.5 bpm one. Zero-padding interpolates the spectrum and adds no true resolution, and the results show exactly that: it helps where a clean peak exists (sitting 3.90 → 2.82, working 9.89 → 8.62) and does essentially nothing where the peak is motion-locked (walking 29.66 → 29.61, table soccer −0.27, stairs −1.15). Reporting Stage 4 gains against b2-zp keeps a resolution gain from ever being credited to motion handling.
 
-**Excluding ACC-clipped windows barely helps.** 6,193 of 64,697 windows (9.6%) touch the ±2 g limit, but dropping them moves pooled MAE only from 20.06 to 18.79, and stairs gets slightly *worse* (39.32 → 39.97). Saturation is a marker of vigorous motion rather than the cause of the error. The flag is a reusable column on every window and is reported as `b2_noclip`.
+**The naive spectral peak loses to a constant on five of eight activities** — stairs, table soccer, driving, lunch and walking. Pooled, b2-zp is 18.98 bpm against b0's 18.57. Working is the one genuinely quiet high-duration activity, where b2-zp (8.62) clearly beats b0 (17.02); lunch and driving are *not* quiet in this sense, despite their low motion. Three checks confirm b2 is implemented correctly rather than broken:
 
-Per-subject MAE varies widely — b2 ranges from 9.71 (S7) to 47.15 (S5) — which is why fold-level spread is reported alongside every mean.
+- **At rest it is nearly exact.** 89.5% of sitting windows land within one FFT bin, median error −0.1 bpm.
+- **The errors are structured.** Median error on stairs is −32.8 bpm: the estimate sits *below* the truth, locked onto lower-frequency motion energy. 13–16% of stairs and walking windows land on a 2× or ½× harmonic.
+- **It never beats the oracle** on any activity.
+
+### Accelerometer clipping
+
+The E4 accelerometer saturates at ±2 g. Each window carries both a boolean flag and a continuous `clip_fraction`, and the distribution is extremely uneven (`results/clip_fraction_by_activity.csv`):
+
+| Activity | Windows flagged | Mean clip fraction | p95 | Max |
+|---|---|---|---|---|
+| table soccer | **47.5%** | 0.52% | 1.95% | 5.5% |
+| cycling | **39.0%** | 0.64% | 2.73% | 23.8% |
+| walking | 10.9% | 0.09% | 0.78% | 3.9% |
+| stairs | 10.7% | 0.11% | 0.78% | 9.0% |
+| driving | 10.0% | 0.08% | 0.39% | 5.1% |
+| lunch | 1.6% | 0.01% | 0.00% | 2.7% |
+| working | 0.7% | 0.00% | 0.00% | 3.1% |
+| sitting | 0.1% | 0.00% | 0.00% | 0.4% |
+
+Nearly half of table-soccer windows and two-fifths of cycling windows contain saturated accelerometer samples, against almost none at rest. **This matters for Stage 4, not here:** b2 never reads the accelerometer, so scoring it with and without flagged windows cannot say anything about what clipping causes. The `b2_noclip` rows exist as a descriptive column only; the comparison will be repeated once the ACC-referenced methods exist, where it will mean something.
+
+### Per-subject spread
+
+b2-zp MAE ranges from 8.75 (S7) to 45.87 (S5). **S5 is investigated in full in [results/s5_investigation.md](results/s5_investigation.md)** and is excluded from nothing. In short: its oracle error is the *best* in the cohort and its resting b2 MAE is ordinary (3.95 vs 3.23 median), so alignment and sensor contact are fine. What differs is heart rate — elevated in every activity, mean 125.8 bpm against a cohort mean of 86.6, and above 120 bpm in 54% of windows against 7.7% elsewhere. The low-frequency lock that causes the error is cohort-wide, but a true HR near 160 turns each locked window into a ~130 bpm error instead of a ~40 bpm one. Under MAPE, S5 is 35.8% against a cohort median of 19.1% — still worst, far less extreme.
 
 ## Reproduce
 
@@ -85,10 +107,11 @@ Per-subject MAE varies widely — b2 ranges from 9.71 (S7) to 47.15 (S5) — whi
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 # obtain PPG-DaLiA first: see data/README.md
-pytest                              # 68 tests; 13 need the dataset and skip without it
+pytest                              # 74 tests; 13 need the dataset and skip without it
 python -m src.data.plot_rest_bvp    # figures/s1_rest_bvp.png and the DC numbers above
 python -m src.features.report_sqi   # results/02_sqi_by_activity.csv
-python -m src.eval.report_baselines # results/baselines_*.csv, with stop-condition checks
+python -m src.eval.report_baselines # results/baselines_*.csv, clipping table, stop-condition checks
+python -m src.eval.investigate_s5   # results/s5_investigation.md + figures/s5_worst_windows.png
 ```
 
 The first real-data run unpickles all 15 subjects (~23 GB) and builds a 3.5 GB cache in about 40 s; later runs take about 3 s.
@@ -102,6 +125,7 @@ _Per-activity failures and the gap to published benchmarks are written once eval
 - **S6 is truncated** (5,250 s, activities 1–5 only), so folds are not equivalent.
 - **The accelerometer clips at ±2 g**, most during cycling and table soccer. Motion references are least reliable exactly where they are most needed.
 - **Band-edge roll-off.** Zero-phase filtering halves the amplitude at 240 bpm. It is immaterial on PPG-DaLiA (0.06% of labels above 180 bpm) but would matter on a higher-intensity cohort.
+- **Absolute error flatters low-heart-rate subjects.** MAE in bpm is reported with MAPE beside it throughout, because the same locked window costs ~40 bpm for a resting subject and ~130 for S5.
 - **The SQI's template term is weak**, varying only 0.80-0.86 between resting and walking; spectral concentration carries the signal.
 - Activity durations are imbalanced, and this is a single dataset from a single device.
 

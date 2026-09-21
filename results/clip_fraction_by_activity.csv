@@ -1,0 +1,9 @@
+activity,n_windows,windows_flagged_pct,mean_clip_fraction_pct,p95_clip_fraction_pct,max_clip_fraction_pct
+sitting,4569,0.09,0.0,0.0,0.391
+stairs,3239,10.68,0.108,0.781,8.984
+table soccer,2310,47.45,0.52,1.953,5.469
+cycling,3473,39.02,0.638,2.734,23.828
+driving,6843,9.98,0.08,0.391,5.078
+lunch,13554,1.62,0.008,0.0,2.734
+walking,4697,10.88,0.089,0.781,3.906
+working,8497,0.66,0.004,0.0,3.125
