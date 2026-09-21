@@ -10,6 +10,8 @@ Heart-rate estimation from wrist PPG during real-world movement on PPG-DaLiA, wi
 
 **Status:** Stages 0–3 are done — validated data layer, label-aligned windowing, band-pass with signal quality, and the four LOSO baselines below. Motion compensation (spectral masking, adaptive cancellation, peak tracking) follows.
 
+Design decisions and the evidence behind each: [docs/decisions.md](docs/decisions.md).
+
 ## Data layer (Stage 0)
 
 `src/data/loader.py` loads each subject into a validated `SubjectRecord` and caches it. It raises on anything the pipeline assumes and does not hold: missing keys, channels whose durations disagree by even one sample, a label count that doesn't match 8 s windows at a 2 s shift, accelerometer data not in g, non-constant "dummy" channels, or out-of-order R-peaks. Nothing is silently coerced; the single tolerated irregularity (exact duplicate R-peaks in S6 and S14) is counted on the record.
@@ -133,7 +135,7 @@ b2-zp MAE ranges from 8.75 (S7) to 45.87 (S5). **S5 is investigated in full in [
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 # obtain PPG-DaLiA first: see data/README.md
-pytest                              # 74 tests; 13 need the dataset and skip without it
+pytest                              # 78 tests; 13 need the dataset and skip without it
 python -m src.data.plot_rest_bvp    # figures/s1_rest_bvp.png and the DC numbers above
 python -m src.features.report_sqi   # results/02_sqi_by_activity.csv
 python -m src.eval.report_baselines # results/baselines_*.csv, clipping table, stop-condition checks
