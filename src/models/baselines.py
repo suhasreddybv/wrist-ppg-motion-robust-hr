@@ -5,8 +5,12 @@ b1  previous window's ground-truth HR. Uses labels, so it is an ORACLE reference
     and not a deployable method. It measures how much of the task is pure
     temporal smoothness.
 b2  naive spectral peak: FFT of the band-passed window, argmax in 0.4-4 Hz,
-    converted to bpm. No motion handling of any kind. Everything added later is
-    measured against this number.
+    converted to bpm. No motion handling of any kind.
+b2-zp  the same estimator zero-padded to nfft=4096, so the peak is located on a
+    ~0.94 bpm grid instead of a 7.5 bpm one. Zero-padding interpolates the
+    spectrum; it adds no true resolution and cannot undo a motion-locked peak.
+    Stage 4 gains are reported against b2-zp, so that finer spectral spacing is
+    never mistaken for motion handling.
 
 b2 resolution: an 8 s window at 64 Hz gives 1/8 Hz bins, i.e. 7.5 bpm. The
 estimate is therefore quantised, which puts a floor of roughly 1.9 bpm MAE on it
@@ -18,6 +22,8 @@ from __future__ import annotations
 import numpy as np
 
 from src.features.preprocess import CARDIAC_BAND_HZ
+
+ZERO_PAD_NFFT = 4096   # b2-zp: ~0.94 bpm spectral spacing, vs 7.5 bpm for the plain FFT
 
 ORACLE_METHODS = frozenset({"b1"})
 
