@@ -1,0 +1,37 @@
+method,activity,n_folds,n_windows,mae,mae_sd_across_folds,mae_worst_fold,rmse,oracle
+b0,sitting,15,4569,29.276,11.16,45.737,29.65,False
+b0,stairs,15,3239,30.948,17.675,74.357,34.146,False
+b0,table soccer,15,2310,14.019,12.814,46.969,14.991,False
+b0,cycling,15,3473,33.739,19.031,76.913,37.074,False
+b0,driving,15,6843,14.111,8.377,32.626,15.038,False
+b0,lunch,14,13554,13.702,7.228,30.517,14.874,False
+b0,walking,14,4697,15.457,13.009,48.54,16.598,False
+b0,working,14,8497,17.025,6.928,31.462,17.861,False
+b0,POOLED (incl. transient),15,64697,18.566,7.951,39.249,22.486,False
+b1,sitting,15,4569,1.093,0.327,1.941,1.545,True
+b1,stairs,15,3239,1.121,0.283,1.749,1.524,True
+b1,table soccer,15,2310,1.848,0.742,3.057,2.402,True
+b1,cycling,15,3473,0.959,0.212,1.229,1.345,True
+b1,driving,15,6843,1.706,0.586,2.751,2.21,True
+b1,lunch,14,13554,1.713,0.466,2.48,2.202,True
+b1,walking,14,4697,1.25,0.902,4.016,1.647,True
+b1,working,14,8497,1.399,0.432,2.123,1.879,True
+b1,POOLED (incl. transient),15,64697,1.488,0.365,2.022,2.092,True
+b2,sitting,15,4569,3.898,2.046,8.723,7.105,False
+b2,stairs,15,3239,39.324,16.679,69.235,48.906,False
+b2,table soccer,15,2310,33.537,18.048,79.203,38.801,False
+b2,cycling,15,3473,30.962,22.539,89.895,44.13,False
+b2,driving,15,6843,14.964,10.879,50.304,22.43,False
+b2,lunch,14,13554,15.503,8.428,37.324,22.952,False
+b2,walking,14,4697,29.662,15.074,57.025,36.653,False
+b2,working,14,8497,9.894,7.461,31.918,16.42,False
+b2,POOLED (incl. transient),15,64697,20.057,9.455,47.146,30.395,False
+b2_noclip,sitting,15,4565,3.895,2.047,8.723,7.104,False
+b2_noclip,stairs,15,2893,39.969,19.131,85.059,49.437,False
+b2_noclip,table soccer,15,1214,30.919,17.416,78.887,36.655,False
+b2_noclip,cycling,15,2118,31.138,22.94,89.716,44.556,False
+b2_noclip,driving,15,6160,14.063,10.273,47.164,21.334,False
+b2_noclip,lunch,14,13334,15.336,8.3,36.618,22.796,False
+b2_noclip,walking,14,4186,28.971,14.437,55.675,35.923,False
+b2_noclip,working,14,8441,9.871,7.434,31.727,16.408,False
+b2_noclip,POOLED (incl. transient),15,58504,18.792,8.616,43.65,29.103,False
