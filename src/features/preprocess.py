@@ -42,7 +42,7 @@ class QualityIndex:
     template_corr: np.ndarray        # mean correlation of each beat with the window's template
     spectral_concentration: np.ndarray  # in-band power near the dominant peak / total in-band power
     out_of_band_ratio: np.ndarray    # power outside 0.4-4 Hz / total power, from the unfiltered window
-    combined: np.ndarray             # template_corr (clipped to 0-1) * spectral_concentration
+    combined: np.ndarray             # spectral_concentration; see note on the template term below
 
 
 @dataclass(frozen=True)
@@ -137,12 +137,26 @@ def _template_correlation(w: np.ndarray, fs: int) -> np.ndarray:
     return out
 
 
+def composite_with_template(template_corr: np.ndarray, concentration: np.ndarray) -> np.ndarray:
+    """The pre-decision composite, kept so `validate_sqi` can reproduce the comparison."""
+    return np.clip(template_corr, 0, 1) * concentration
+
+
 def quality_index(bvp_filtered_z: np.ndarray, bvp_raw_w: np.ndarray, fs: int,
                   band=CARDIAC_BAND_HZ) -> QualityIndex:
+    """Per-window quality. The composite is spectral concentration alone.
+
+    The beat-template term was dropped on 22 Sep 2026 after validation against error
+    (results/sqi_validation.csv): pooled over non-transient windows, the composite
+    without it scores AUROC 0.722 for detecting |error| > 10 bpm, inside the 95% CI
+    of the full composite ([0.69, 0.76] around 0.729). The simpler score is
+    statistically indistinguishable, so the term goes. It is still computed and
+    reported as a component.
+    """
     tc = _template_correlation(bvp_filtered_z, fs)
     sc = _spectral_concentration(bvp_filtered_z, fs, band)
     ob = _out_of_band_ratio(bvp_raw_w, fs, band)
-    return QualityIndex(tc, sc, ob, np.clip(tc, 0, 1) * sc)
+    return QualityIndex(tc, sc, ob, sc.copy())
 
 
 def preprocess_subject(rec: SubjectRecord, band: tuple[float, float] = CARDIAC_BAND_HZ,
