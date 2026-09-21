@@ -13,7 +13,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from src.data.loader import SHIFT_S, WINDOW_S, SubjectRecord
+from src.data.loader import SHIFT_S, WINDOW_S, WRIST_ACC_LIMIT_G, SubjectRecord
 
 ACTIVITY_RATE = 4
 TRANSIENT = 0
@@ -33,6 +33,7 @@ class WindowedSubject:
     hr: np.ndarray           # (n_windows,) ground-truth bpm
     activity: np.ndarray     # (n_windows,) modal activity id over the window
     start_s: np.ndarray      # (n_windows,) window start time in seconds
+    acc_clipped: np.ndarray  # (n_windows,) True if wrist ACC reaches +-2 g anywhere in the window
     skin_type: int
     bvp_fs: int = 64
     acc_fs: int = 32
@@ -55,6 +56,7 @@ class Window:
     hr: float
     activity: int
     skin_type: int
+    acc_clipped: bool
 
 
 def n_windows_for(duration_s: float) -> int:
@@ -110,6 +112,10 @@ def window_subject(rec: SubjectRecord, copy: bool = True) -> WindowedSubject:
         counts[:, cls] = (act_w == cls).sum(axis=1)
     activity = counts.argmax(axis=1).astype(np.int8)
 
+    # Reusable flag: the E4 accelerometer saturates at +-2 g, so the motion reference
+    # is unreliable in these windows. Stage 3 reports with and without them; 4b reuses it.
+    clipped = np.any(np.abs(acc_w) >= WRIST_ACC_LIMIT_G, axis=(1, 2))
+
     return WindowedSubject(
         subject_id=rec.subject_id,
         bvp=np.ascontiguousarray(bvp_w) if copy else bvp_w,
@@ -117,6 +123,7 @@ def window_subject(rec: SubjectRecord, copy: bool = True) -> WindowedSubject:
         hr=np.asarray(rec.label, dtype=float),
         activity=activity,
         start_s=np.arange(n, dtype=float) * SHIFT_S,
+        acc_clipped=clipped,
         skin_type=rec.skin_type,
         bvp_fs=bvp.fs,
         acc_fs=acc.fs,
@@ -136,4 +143,5 @@ def iter_windows(rec: SubjectRecord):
             hr=float(ws.hr[i]),
             activity=int(ws.activity[i]),
             skin_type=ws.skin_type,
+            acc_clipped=bool(ws.acc_clipped[i]),
         )
