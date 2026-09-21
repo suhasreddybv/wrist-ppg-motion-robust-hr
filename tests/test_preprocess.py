@@ -5,6 +5,7 @@ from src.data import loader
 from src.features.preprocess import (
     CARDIAC_BAND_HZ,
     bandpass,
+    composite_with_template,
     preprocess_subject,
     quality_index,
     resample_acc,
@@ -119,7 +120,11 @@ def test_sqi_high_for_clean_pulse_low_for_noise():
     assert q_clean.template_corr[0] > 0.9
     assert q_clean.spectral_concentration[0] > 0.5
     assert q_clean.combined[0] > q_noise.combined[0]
-    assert q_noise.combined[0] < 0.3
+    # The composite is spectral concentration alone since the template term was dropped,
+    # so noise no longer gets multiplied down: it scores ~0.39 rather than ~0.1. What the
+    # SQI must preserve is the ordering and a clear margin, not a fixed absolute value.
+    assert q_noise.combined[0] < 0.5
+    assert q_clean.combined[0] - q_noise.combined[0] > 0.3
 
 
 def test_out_of_band_ratio_flags_high_frequency_content():
@@ -173,3 +178,20 @@ def test_sqi_is_higher_at_rest_than_in_motion():
     cycling = pre.sqi.combined[act == 4].mean()
     assert sitting > walking
     assert sitting > cycling
+
+
+# --- SQI composite after the template term was dropped -----------------------
+
+def test_composite_is_spectral_concentration_only():
+    """The template term was dropped on 22 Sep 2026; see results/sqi_validation.csv."""
+    w = np.stack([_pulse_train(hr_bpm=h, noise=0.2, seed=h) for h in (60, 90, 140)])
+    q = quality_index(w, w, FS)
+    np.testing.assert_allclose(q.combined, q.spectral_concentration)
+    assert np.any(q.template_corr > 0)          # still computed and reported
+
+
+def test_composite_with_template_is_kept_for_reproducing_the_decision():
+    w = _pulse_train()[None, :]
+    q = quality_index(w, w, FS)
+    old = composite_with_template(q.template_corr, q.spectral_concentration)
+    assert old[0] <= q.spectral_concentration[0] + 1e-12

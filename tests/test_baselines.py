@@ -228,3 +228,21 @@ def test_b2_is_accurate_at_rest_and_degrades_with_motion():
         gain = by[("b2", activity)]["mae_mean_of_folds"] - by[("b2_zp", activity)]["mae_mean_of_folds"]
         assert gain <= 3.0, (activity, gain)
     assert len(build) == 3
+
+
+# --- AUROC used by the SQI validation ---------------------------------------
+
+def test_auroc_perfect_and_chance():
+    from src.eval.validate_sqi import auroc
+    score = np.array([0.1, 0.2, 0.8, 0.9])
+    assert auroc(score, np.array([False, False, True, True])) == pytest.approx(1.0)
+    assert auroc(score, np.array([True, True, False, False])) == pytest.approx(0.0)
+    assert auroc(np.ones(4), np.array([True, False, True, False])) == pytest.approx(0.5)  # all ties
+
+
+def test_auroc_matches_rank_definition_with_ties():
+    from src.eval.validate_sqi import auroc
+    score = np.array([1.0, 2.0, 2.0, 3.0])
+    pos = np.array([False, True, False, True])
+    # positives hold ranks 2.5 and 4 of 4; U = (2.5 + 4) - 3 = 3.5 over 2*2 pairs
+    assert auroc(score, pos) == pytest.approx(3.5 / 4)

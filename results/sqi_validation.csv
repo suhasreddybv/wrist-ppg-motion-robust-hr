@@ -1,0 +1,46 @@
+activity,variant,auroc,ci_lo,ci_hi,n_subjects,n_windows,includes_chance
+sitting,composite (shipped),0.8947,0.865,0.9209,15,4569,False
+sitting,composite with template (pre-decision),0.8663,0.8286,0.9002,15,4569,False
+sitting,template only,0.6819,0.5775,0.7748,15,4569,False
+sitting,spectral concentration only,0.8947,0.8656,0.9225,15,4569,False
+sitting,out-of-band power,0.8363,0.7861,0.886,15,4569,False
+stairs,composite (shipped),0.429,0.3338,0.5207,15,3239,True
+stairs,composite with template (pre-decision),0.4562,0.3611,0.5489,15,3239,True
+stairs,template only,0.5826,0.4982,0.663,15,3239,True
+stairs,spectral concentration only,0.429,0.3402,0.517,15,3239,True
+stairs,out-of-band power,0.439,0.3752,0.4992,15,3239,False
+table soccer,composite (shipped),0.4478,0.4057,0.4843,15,2310,False
+table soccer,composite with template (pre-decision),0.4653,0.4047,0.5149,15,2310,True
+table soccer,template only,0.5369,0.4611,0.6038,15,2310,True
+table soccer,spectral concentration only,0.4478,0.4022,0.4852,15,2310,False
+table soccer,out-of-band power,0.5526,0.5042,0.5965,15,2310,False
+cycling,composite (shipped),0.6001,0.482,0.704,15,3473,True
+cycling,composite with template (pre-decision),0.6589,0.5425,0.7488,15,3473,False
+cycling,template only,0.7936,0.71,0.8515,15,3473,False
+cycling,spectral concentration only,0.6001,0.4781,0.706,15,3473,True
+cycling,out-of-band power,0.5771,0.4558,0.6825,15,3473,True
+driving,composite (shipped),0.7028,0.6548,0.7488,15,6843,False
+driving,composite with template (pre-decision),0.7221,0.6686,0.7695,15,6843,False
+driving,template only,0.6697,0.5928,0.7365,15,6843,False
+driving,spectral concentration only,0.7028,0.6529,0.7491,15,6843,False
+driving,out-of-band power,0.6395,0.5697,0.711,15,6843,False
+lunch,composite (shipped),0.6846,0.6243,0.7385,14,13554,False
+lunch,composite with template (pre-decision),0.6919,0.6324,0.7429,14,13554,False
+lunch,template only,0.6248,0.5491,0.6848,14,13554,False
+lunch,spectral concentration only,0.6846,0.6228,0.7374,14,13554,False
+lunch,out-of-band power,0.6577,0.6001,0.71,14,13554,False
+walking,composite (shipped),0.5374,0.4277,0.6309,14,4697,True
+walking,composite with template (pre-decision),0.5573,0.4443,0.6498,14,4697,True
+walking,template only,0.5898,0.5181,0.6454,14,4697,False
+walking,spectral concentration only,0.5374,0.4243,0.6314,14,4697,True
+walking,out-of-band power,0.507,0.4421,0.5646,14,4697,True
+working,composite (shipped),0.7969,0.731,0.8426,14,8497,False
+working,composite with template (pre-decision),0.7952,0.7373,0.8402,14,8497,False
+working,template only,0.6914,0.5996,0.7716,14,8497,False
+working,spectral concentration only,0.7969,0.7338,0.8399,14,8497,False
+working,out-of-band power,0.7439,0.6941,0.7898,14,8497,False
+POOLED (excl. transient),composite (shipped),0.7222,0.6863,0.7503,15,47182,False
+POOLED (excl. transient),composite with template (pre-decision),0.7289,0.6914,0.7619,15,47182,False
+POOLED (excl. transient),template only,0.6604,0.5983,0.7143,15,47182,False
+POOLED (excl. transient),spectral concentration only,0.7222,0.6853,0.7508,15,47182,False
+POOLED (excl. transient),out-of-band power,0.6518,0.6231,0.6803,15,47182,False
