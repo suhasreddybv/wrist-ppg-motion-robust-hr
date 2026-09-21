@@ -2,6 +2,10 @@
 
 Heart-rate estimation from wrist PPG during real-world movement on PPG-DaLiA, with accelerometer-informed motion compensation. It is evaluated leave-one-subject-out, per activity, with baselines reported first.
 
+![Wrist PPG spectrogram during walking, stairs and sitting for S4, with ECG heart rate, the b2-zp estimate and the dominant accelerometer frequency overlaid](figures/motion_collision.png)
+
+*Band-passed wrist-PPG spectrum over the estimator's own 8 s windows for S4, with the ECG ground-truth heart rate (solid), the naive spectral-peak estimate (crosses) and the dominant wrist-accelerometer frequency with its stride subharmonic (dashed, dotted). During stairs the estimate sits on an accelerometer line in 71% of windows and on the true heart rate in 11%, while at rest it tracks the heart rate in 88% — the estimator is following the motion, not the heart. S4 was selected by rule: its stairs MAE is the closest of the 15 subjects to the cohort median.*
+
 **Result.** _Pending. The per-activity MAE table against a naive spectral-peak baseline and Reiss et al. (2019) goes here once evaluation lands (by 4 Oct 2026)._
 
 **Status:** Stages 0–3 are done — validated data layer, label-aligned windowing, band-pass with signal quality, and the four LOSO baselines below. Motion compensation (spectral masking, adaptive cancellation, peak tracking) follows.
@@ -34,20 +38,42 @@ The wide band is kept deliberately. Measured gain is 1.00 up to 150 bpm, 0.96 at
 
 **Signal quality index** per window, from three components: mean correlation of each beat with the window's own beat template, spectral concentration around the dominant in-band peak, and the fraction of power outside the cardiac band (measured on the unfiltered window). Perfusion index is unavailable, as the BVP has no DC component.
 
-Mean SQI by activity, all 15 subjects, window-weighted (`results/02_sqi_by_activity.csv`):
+**The composite is spectral concentration alone.** The beat-template term was dropped after validating it against error (below): the composite without it scores AUROC 0.722 for finding bad windows, inside the full composite's 95% CI of [0.69, 0.76]. A term that adds nothing measurable does not stay. It is still computed and reported as a component.
 
-| Activity | Windows | SQI | Template r | Spectral concentration |
+Mean SQI by activity, all 15 subjects, window-weighted — **descriptive only**, since motion lowers SQI and raises error, so this ordering would appear whether or not the SQI said anything about an individual window (`results/02_sqi_by_activity.csv`):
+
+| Activity | Windows | SQI | Template r | Out-of-band |
 |---|---|---|---|---|
-| sitting | 4,569 | **0.636** | 0.855 | 0.739 |
-| working | 8,497 | 0.544 | 0.857 | 0.625 |
-| driving | 6,843 | 0.491 | 0.848 | 0.573 |
-| lunch | 13,554 | 0.480 | 0.832 | 0.572 |
-| cycling | 3,473 | 0.468 | 0.851 | 0.542 |
-| table soccer | 2,310 | 0.397 | 0.810 | 0.488 |
-| stairs | 3,239 | 0.390 | 0.819 | 0.474 |
-| walking | 4,697 | **0.389** | 0.801 | 0.483 |
+| sitting | 4,569 | **0.739** | 0.855 | 0.055 |
+| working | 8,497 | 0.625 | 0.857 | 0.084 |
+| driving | 6,843 | 0.573 | 0.848 | 0.110 |
+| lunch | 13,554 | 0.572 | 0.832 | 0.114 |
+| cycling | 3,473 | 0.542 | 0.851 | 0.086 |
+| table soccer | 2,310 | 0.488 | 0.810 | 0.135 |
+| walking | 4,697 | **0.483** | 0.801 | 0.087 |
+| stairs | 3,239 | **0.474** | 0.819 | 0.088 |
 
-The ordering is what it should be: sitting best, walking and stairs worst. Note that **template correlation barely discriminates** (0.80–0.86 across every activity) — beat detection still finds self-similar peaks in motion-corrupted windows, so essentially all the separation comes from spectral concentration. Treat the template term as weak evidence.
+### Does the SQI predict error?
+
+The real test is *within* an activity. Below: AUROC for detecting a b2-zp error above 10 bpm, oriented so higher means worse, with 95% CIs from bootstrapping **subjects** rather than windows — windows within a subject are correlated, and resampling them would understate the interval (`results/sqi_validation.csv`).
+
+![Error by within-activity SQI decile, and AUROC per activity with confidence intervals](figures/sqi_vs_error.png)
+
+| Activity | AUROC [95% CI] | Median error, worst vs best SQI decile | Verdict |
+|---|---|---|---|
+| sitting | 0.895 [0.87, 0.92] | 5.0 → 0.5 | predictive |
+| working | 0.797 [0.73, 0.84] | 9.9 → 0.7 | predictive |
+| driving | 0.703 [0.65, 0.75] | 13.7 → 1.4 | predictive |
+| lunch | 0.685 [0.62, 0.74] | 12.1 → 1.1 | predictive |
+| cycling | 0.600 [0.48, 0.70] | 27.5 → 1.1 | **CI includes chance** |
+| walking | 0.537 [0.43, 0.63] | 26.0 → 14.1 | **CI includes chance** |
+| stairs | 0.429 [0.33, 0.52] | 25.5 → 49.9 | **CI includes chance** |
+| table soccer | 0.448 [0.41, 0.48] | 32.0 → 32.5 | **anti-predictive** |
+| **Pooled** (excl. transient) | 0.722 [0.69, 0.75] | — | predictive |
+
+**The SQI works where there is little motion and fails where there is a lot** — which is the opposite of where a tracker would want it. In stairs, cycling and walking the CI includes 0.5, so it does not discriminate. In table soccer it is worse than useless: AUROC 0.448 with a CI entirely below 0.5, meaning higher SQI goes with *larger* error, and on stairs the worst-to-best decile trend runs the wrong way (25.5 → 49.9 bpm). The reason is that a motion-locked window can have a very sharp spectral peak — at the stride frequency. Concentration measures peak sharpness, not whether the peak is the heart.
+
+**Consequence for Stage 4:** the peak tracker must not use SQI-triggered resets in stairs, table soccer, cycling or walking. Since activity labels will not exist at inference time, the reset rule needs a motion-aware quality term (e.g. agreement between the PPG peak and the accelerometer spectrum), not this SQI. No threshold has been tuned here; if one is needed it is chosen inside each LOSO fold on training subjects only.
 
 ## Baselines (Stage 3)
 
@@ -99,7 +125,7 @@ Nearly half of table-soccer windows and two-fifths of cycling windows contain sa
 
 ### Per-subject spread
 
-b2-zp MAE ranges from 8.75 (S7) to 45.87 (S5). **S5 is investigated in full in [results/s5_investigation.md](results/s5_investigation.md)** and is excluded from nothing. In short: its oracle error is the *best* in the cohort and its resting b2 MAE is ordinary (3.95 vs 3.23 median), so alignment and sensor contact are fine. What differs is heart rate — elevated in every activity, mean 125.8 bpm against a cohort mean of 86.6, and above 120 bpm in 54% of windows against 7.7% elsewhere. The low-frequency lock that causes the error is cohort-wide, but a true HR near 160 turns each locked window into a ~130 bpm error instead of a ~40 bpm one. Under MAPE, S5 is 35.8% against a cohort median of 19.1% — still worst, far less extreme.
+b2-zp MAE ranges from 8.75 (S7) to 45.87 (S5). **S5 is investigated in full in [results/s5_investigation.md](results/s5_investigation.md)** and is excluded from nothing. In short: its oracle error is the *best* in the cohort and its resting b2 MAE is ordinary (3.95 vs 3.23 median), so alignment and sensor contact are fine. What differs is heart rate: S5's labels are higher in every activity, mean 125.8 bpm against a cohort mean of 86.6, and above 120 bpm in 54% of windows against 7.7% elsewhere. That was verified rather than assumed — ECG and PPG agree independently at rest (median 92.7 vs 91.9 bpm over 300 sitting windows), and inspection of chest-ECG strips in high-rate, low-motion, unclipped windows shows the stored R-peaks sitting on QRS complexes with T waves unmarked, RR intervals matching the labels to 0.1 bpm, and no short/long alternation that would indicate T-wave oversensing (0.00% of S5's high-rate windows, against 0.00% for S7 and 0.36% for S10). The low-frequency lock that causes the error is cohort-wide, but a true HR near 160 turns each locked window into a ~130 bpm error instead of a ~40 bpm one. Under MAPE, S5 is 35.8% against a cohort median of 19.1% — still worst, far less extreme.
 
 ## Reproduce
 
@@ -112,6 +138,9 @@ python -m src.data.plot_rest_bvp    # figures/s1_rest_bvp.png and the DC numbers
 python -m src.features.report_sqi   # results/02_sqi_by_activity.csv
 python -m src.eval.report_baselines # results/baselines_*.csv, clipping table, stop-condition checks
 python -m src.eval.investigate_s5   # results/s5_investigation.md + figures/s5_worst_windows.png
+python -m src.eval.verify_s5_hr     # ECG verification of S5's heart rate
+python -m src.eval.plot_motion_collision  # figures/motion_collision.png (hero image)
+python -m src.eval.validate_sqi     # results/sqi_validation.csv (~4 min: subject bootstrap)
 ```
 
 The first real-data run unpickles all 15 subjects (~23 GB) and builds a 3.5 GB cache in about 40 s; later runs take about 3 s.
@@ -126,7 +155,7 @@ _Per-activity failures and the gap to published benchmarks are written once eval
 - **The accelerometer clips at ±2 g**, most during cycling and table soccer. Motion references are least reliable exactly where they are most needed.
 - **Band-edge roll-off.** Zero-phase filtering halves the amplitude at 240 bpm. It is immaterial on PPG-DaLiA (0.06% of labels above 180 bpm) but would matter on a higher-intensity cohort.
 - **Absolute error flatters low-heart-rate subjects.** MAE in bpm is reported with MAPE beside it throughout, because the same locked window costs ~40 bpm for a resting subject and ~130 for S5.
-- **The SQI's template term is weak**, varying only 0.80-0.86 between resting and walking; spectral concentration carries the signal.
+- **The SQI does not work under motion.** It predicts error well at rest (AUROC 0.895) and not at all during stairs, cycling or walking, and is anti-predictive during table soccer. Stage 4 cannot rely on it for reset decisions.
 - Activity durations are imbalanced, and this is a single dataset from a single device.
 
 ## References
