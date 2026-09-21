@@ -8,6 +8,12 @@ def mae(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     return float(np.mean(np.abs(np.asarray(y_pred, float) - np.asarray(y_true, float))))
 
 
+def mape(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    """Mean absolute percentage error. A 5 bpm error means different things at 60 and 160 bpm."""
+    t = np.asarray(y_true, float)
+    return float(np.mean(np.abs(np.asarray(y_pred, float) - t) / t) * 100.0)
+
+
 def rmse(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     return float(np.sqrt(np.mean((np.asarray(y_pred, float) - np.asarray(y_true, float)) ** 2)))
 

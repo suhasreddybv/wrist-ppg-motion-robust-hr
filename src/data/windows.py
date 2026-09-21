@@ -34,6 +34,7 @@ class WindowedSubject:
     activity: np.ndarray     # (n_windows,) modal activity id over the window
     start_s: np.ndarray      # (n_windows,) window start time in seconds
     acc_clipped: np.ndarray  # (n_windows,) True if wrist ACC reaches +-2 g anywhere in the window
+    clip_fraction: np.ndarray  # (n_windows,) fraction of ACC samples at +-2 g on any axis
     skin_type: int
     bvp_fs: int = 64
     acc_fs: int = 32
@@ -57,6 +58,7 @@ class Window:
     activity: int
     skin_type: int
     acc_clipped: bool
+    clip_fraction: float
 
 
 def n_windows_for(duration_s: float) -> int:
@@ -114,7 +116,9 @@ def window_subject(rec: SubjectRecord, copy: bool = True) -> WindowedSubject:
 
     # Reusable flag: the E4 accelerometer saturates at +-2 g, so the motion reference
     # is unreliable in these windows. Stage 3 reports with and without them; 4b reuses it.
-    clipped = np.any(np.abs(acc_w) >= WRIST_ACC_LIMIT_G, axis=(1, 2))
+    sample_clipped = np.any(np.abs(acc_w) >= WRIST_ACC_LIMIT_G, axis=2)   # (n, samples)
+    clipped = sample_clipped.any(axis=1)
+    clip_fraction = sample_clipped.mean(axis=1)
 
     return WindowedSubject(
         subject_id=rec.subject_id,
@@ -124,6 +128,7 @@ def window_subject(rec: SubjectRecord, copy: bool = True) -> WindowedSubject:
         activity=activity,
         start_s=np.arange(n, dtype=float) * SHIFT_S,
         acc_clipped=clipped,
+        clip_fraction=clip_fraction,
         skin_type=rec.skin_type,
         bvp_fs=bvp.fs,
         acc_fs=acc.fs,
@@ -144,4 +149,5 @@ def iter_windows(rec: SubjectRecord):
             activity=int(ws.activity[i]),
             skin_type=ws.skin_type,
             acc_clipped=bool(ws.acc_clipped[i]),
+            clip_fraction=float(ws.clip_fraction[i]),
         )
