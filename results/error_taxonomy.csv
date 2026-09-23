@@ -1,0 +1,58 @@
+scope,name,label,n_error_windows,count,share,median_signed_error,median_sqi,true_hr_min,true_hr_p1,true_hr_p5
+activity,sitting,floor,332,0,0.0,,,,,
+activity,sitting,acc_locked,332,49,0.1476,-11.16,0.5296,,,
+activity,sitting,harmonic,332,42,0.1265,-30.73,0.4788,,,
+activity,sitting,other,332,241,0.7259,-16.47,0.5339,,,
+activity,stairs,floor,2175,2,0.0009,-70.63,0.3036,,,
+activity,stairs,acc_locked,2175,846,0.389,-51.29,0.4759,,,
+activity,stairs,harmonic,2175,155,0.0713,-54.88,0.4608,,,
+activity,stairs,other,2175,1172,0.5389,-49.56,0.4742,,,
+activity,table soccer,floor,1732,2,0.0012,-49.1,0.3377,,,
+activity,table soccer,acc_locked,1732,208,0.1201,-41.97,0.4986,,,
+activity,table soccer,harmonic,1732,194,0.112,-43.36,0.4838,,,
+activity,table soccer,other,1732,1328,0.7667,-35.4,0.4846,,,
+activity,cycling,floor,1518,1,0.0007,-85.17,0.3429,,,
+activity,cycling,acc_locked,1518,238,0.1568,-66.14,0.5152,,,
+activity,cycling,harmonic,1518,108,0.0711,-54.96,0.5486,,,
+activity,cycling,other,1518,1171,0.7714,-66.28,0.4908,,,
+activity,driving,floor,2201,2,0.0009,-79.44,0.461,,,
+activity,driving,acc_locked,2201,292,0.1327,-32.38,0.5196,,,
+activity,driving,harmonic,2201,258,0.1172,-40.56,0.4972,,,
+activity,driving,other,2201,1649,0.7492,-27.2,0.4887,,,
+activity,lunch,floor,4779,16,0.0033,-56.1,0.5199,,,
+activity,lunch,acc_locked,4779,630,0.1318,-34.16,0.4996,,,
+activity,lunch,harmonic,4779,661,0.1383,-40.81,0.5089,,,
+activity,lunch,other,4779,3472,0.7265,-29.9,0.5075,,,
+activity,walking,floor,2951,2,0.0007,-92.78,0.4135,,,
+activity,walking,acc_locked,2951,1626,0.551,-40.98,0.473,,,
+activity,walking,harmonic,2951,150,0.0508,-49.37,0.4821,,,
+activity,walking,other,2951,1173,0.3975,-44.24,0.4595,,,
+activity,working,floor,1797,10,0.0056,-45.8,0.4015,,,
+activity,working,acc_locked,1797,188,0.1046,-29.9,0.4848,,,
+activity,working,harmonic,1797,224,0.1247,-39.24,0.4792,,,
+activity,working,other,1797,1375,0.7652,-27.03,0.4933,,,
+activity,ALL (excl. transient),floor,17485,35,0.002,-55.32,0.4397,,,
+activity,ALL (excl. transient),acc_locked,17485,4077,0.2332,-40.45,0.4854,,,
+activity,ALL (excl. transient),harmonic,17485,1792,0.1025,-42.81,0.4949,,,
+activity,ALL (excl. transient),other,17485,11581,0.6623,-33.73,0.4905,,,
+cohort,ALL (excl. transient),floor,17485,35,0.002,-55.32,0.4397,,,
+cohort,ALL (excl. transient),acc_locked,17485,4077,0.2332,-40.45,0.4854,,,
+cohort,ALL (excl. transient),harmonic,17485,1792,0.1025,-42.81,0.4949,,,
+cohort,ALL (excl. transient),other,17485,11581,0.6623,-33.73,0.4905,,,
+subject,S5,floor,1928,3,0.0016,-94.25,0.3803,,,
+subject,S5,acc_locked,1928,453,0.235,-70.37,0.4673,,,
+subject,S5,harmonic,1928,149,0.0773,-58.51,0.4985,,,
+subject,S5,other,1928,1323,0.6862,-76.46,0.4996,,,
+subject,S14,floor,1024,9,0.0088,-56.88,0.5265,,,
+subject,S14,acc_locked,1024,323,0.3154,-46.26,0.4823,,,
+subject,S14,harmonic,1024,105,0.1025,-43.24,0.5695,,,
+subject,S14,other,1024,587,0.5732,-39.84,0.5102,,,
+floor,sitting,bottom_of_band,4569,5,0.0011,,,41.7,42.8,44.7
+floor,stairs,bottom_of_band,3239,3,0.0009,,,54.5,69.8,82.4
+floor,table soccer,bottom_of_band,2310,29,0.0126,,,53.4,61.4,69.1
+floor,cycling,bottom_of_band,3473,6,0.0017,,,77.5,82.1,90.1
+floor,driving,bottom_of_band,6843,22,0.0032,,,53.6,60.9,64.8
+floor,lunch,bottom_of_band,13554,59,0.0044,,,53.3,60.4,65.5
+floor,walking,bottom_of_band,4697,12,0.0026,,,60.2,72.1,75.2
+floor,working,bottom_of_band,8497,27,0.0032,,,50.7,55.8,59.1
+floor,ALL (excl. transient),bottom_of_band,47182,163,0.0035,,,41.7,47.7,58.1
