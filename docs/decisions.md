@@ -191,14 +191,35 @@ Every number here is copied from a committed results file, test or script output
 
 ### D-022 · Floor-pinning is a distinct failure mode
 - **Date / commit:** — · raised 2026-09-21 in `270dc70`
-- **Status:** open — to be decided before spectral masking
+- **Status:** superseded by D-024
 - **Decision:** none yet. Some estimates are pinned at the bottom of the search band rather than locked to a motion frequency, and the two need separating before either is fixed.
 - **Evidence:** S5's five worst windows all read exactly 30.0 bpm, the lowest in-band FFT bin, against a true HR near 178 — not a stride frequency. S5 produces an estimate ≤45 bpm in 27.8% of windows, within a cohort range whose median is 16.1% (`results/s5_investigation.md`).
 - **Next step:** an error taxonomy — floor-pinned, accelerometer-locked including harmonics, other — before Stage 4a. Any floor imposed must be justified physiologically or chosen inside each fold on training subjects only, and reported as its own ablation step rather than folded into a motion-handling gain.
 
 ### D-023 · Whether out-of-band power should enter the composite
-- **Date / commit:** — · raised 2026-09-21 in `97674e7`
-- **Status:** open
+- **Date / commit:** — · raised 2026-09-21 in `97674e7`; resolved 2026-09-23 · `c855492`
+- **Status:** adopted — kept as a candidate input to the Stage 4 confidence term, on marginal evidence
 - **Decision:** none yet. Out-of-band power is reported as a component and is not part of the composite (see D-015).
 - **Evidence:** alone it scores AUROC 0.652 [0.623, 0.680] pooled over non-transient windows, below the composite's 0.722 [0.686, 0.750], but it is measured on the unfiltered window and so carries information the in-band concentration cannot (`results/sqi_validation.csv`). Per activity it beats the composite on table soccer (0.553 vs 0.448) and stairs (0.439 vs 0.429) — the two activities where the composite fails.
-- **Next step:** decide alongside D-016's motion-aware confidence term, and test any combination the same way: within activity, subject-bootstrapped, with weights chosen inside each fold rather than on the full cohort.
+- **Outcome (2026-09-23):** the two candidate activities were re-tested with the `validate_sqi` bootstrap across five seeds. **Table soccer:** out-of-band 0.553, CI lower bound 0.500–0.503 depending on seed — it excludes chance in all five, but only just. **Stairs:** out-of-band 0.439 with an upper bound of 0.497–0.501, straddling chance, against the composite's 0.429 — no real difference, as expected, and both sit below chance.
+- **Decision:** out-of-band power is kept as a *candidate input* to the Stage 4 confidence term, not as evidence that it works. One activity with an effect of 0.553 whose interval touches 0.500 is weak support; it must not be relied on alone, and PPG–ACC spectral agreement remains the primary route.
+- **Next step:** test any combination the same way — within activity, subject-bootstrapped, weights chosen inside each fold rather than on the full cohort.
+
+### D-024 · The floor hypothesis is rejected; a lower search bound is proposed on different evidence
+- **Date / commit:** 2026-09-23 · `c855492` (supersedes D-022)
+- **Status:** proposed — not applied; to be implemented, if at all, as its own Stage 4 component
+- **Decision:** floor-pinning as described in D-022 does not exist at cohort scale and that line of work is dropped. Separately, a lower search bound of **40 bpm** is *proposed* on different evidence, to be ablated on its own rather than folded into any motion-handling gain.
+- **Evidence against D-022:** windows whose estimate sits within 2 bpm of the lowest in-band frequency (24.375 bpm on the b2-zp grid) are **0.2%** of the 17,485 non-transient error windows — below the 10% stop threshold (`results/error_taxonomy.csv`). D-022 generalised from five S5 windows that all read exactly 30.0 bpm, which is the lowest bin of b2's **coarse 512-point grid**; on b2-zp's 4,096-point grid the pile-up at the exact bin does not survive. The failure those windows showed is real but belongs to `acc_locked` or `other`, not to a distinct floor class.
+- **Evidence for a 40 bpm bound:** 7.03% of all non-transient windows produce an estimate in [24, 40) bpm, and **100% of estimates below 40 bpm are errors over 10 bpm**, while the lowest ECG label anywhere in the cohort is 41.7 bpm and only 0.53% of labels fall below 45 (`results/error_taxonomy.csv`, true-HR percentiles per activity).
+- **Argument, in one sentence:** the 24–40 bpm region of the search band contains no recoverable heart rate for this cohort and only spurious peaks, so excluding it can only remove errors — but the bound is a property of *this* population, not of physiology, and would be wrong for a bradycardic, athletic or beta-blocked cohort.
+- **Rejected:** applying the bound now. It would improve the numbers before the motion work it is meant to be measured against, and a cohort-derived threshold chosen on all 15 subjects is exactly the leak the evaluation design forbids.
+- **If implemented:** as a distinct component with its own ablation row, with any data-derived value computed inside each LOSO fold on training subjects only, and with the population caveat stated in the README.
+- **Depends on this:** nothing yet.
+
+### D-025 · The dominant failure is accelerometer lock, and two thirds of errors are unexplained
+- **Date / commit:** 2026-09-23 · `c855492`
+- **Status:** adopted (finding; sets Stage 4 priorities)
+- **Decision:** Stage 4 targets accelerometer lock first, and the unexplained majority is tracked as an open measurement rather than assumed to be noise.
+- **Evidence:** of 17,485 non-transient windows with |error| > 10 bpm — `acc_locked` 23.3%, `harmonic` 10.2%, `floor` 0.2%, `other` **66.2%** (`results/error_taxonomy.csv`). Accelerometer lock concentrates where expected: 55.1% of walking errors and 38.9% of stairs errors, against 10–16% elsewhere. Within it, **58% sit on the 0.5× stride subharmonic**, 39% on the step fundamental and 3% on 2× — the same asymmetry the hero figure shows (D-021).
+- **On `other`:** it exceeds the 40% threshold the scope set, and is reported without widening the tolerances. It is not random: 91.9% of `other` estimates fall *below* the true HR, 64.8% are under 60 bpm, and 31.9% lie within 10 bpm of half the true rate — just outside the ±3 bpm harmonic rule. Loosening the accelerometer tolerance to ±8 bpm would absorb 22.4% of it and to ±20 bpm, 60.6%, which suggests much of `other` is motion lock that the single dominant accelerometer peak does not capture, rather than a separate mechanism.
+- **Also:** every class has a median SQI within 0.01 of the 0.490 median across all error windows, so the current quality measure separates none of them — consistent with D-016.
