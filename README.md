@@ -6,9 +6,9 @@ Heart-rate estimation from wrist PPG during real-world movement on PPG-DaLiA, wi
 
 *Band-passed wrist-PPG spectrum over the estimator's own 8 s windows for S4, with the ECG ground-truth heart rate (solid), the naive spectral-peak estimate (crosses) and the dominant wrist-accelerometer frequency with its stride subharmonic (dashed, dotted). During stairs the estimate sits on an accelerometer line in 71% of windows and on the true heart rate in 11%, while at rest it tracks the heart rate in 88% — the estimator is following the motion, not the heart. S4 was selected by rule: its stairs MAE is the closest of the 15 subjects to the cohort median.*
 
-**Result.** _Pending. The per-activity MAE table against a naive spectral-peak baseline and Reiss et al. (2019) goes here once evaluation lands (by 4 Oct 2026)._
+**Result.** Accelerometer-informed spectral masking plus peak tracking cuts heart-rate error on PPG-DaLiA from **18.98 to 15.80 bpm** MAE, leave-one-subject-out over 64,697 windows — matching the published SpaMa baseline (15.56) and short of SpaMaPlus (11.06). Masking removes the failure it targets: accelerometer lock falls from 23.3% of error windows to 13.1%, the chance rate. The method is much **worse** than the baseline on stairs and cycling, which the per-activity table below shows rather than hides.
 
-**Status:** Stages 0–3 are done — validated data layer, label-aligned windowing, band-pass with signal quality, and the four LOSO baselines below. Motion compensation (spectral masking, adaptive cancellation, peak tracking) follows.
+**Status:** Stages 0–4 are done — validated data layer, label-aligned windowing, band-pass with signal quality, four LOSO baselines, and motion compensation by spectral masking and peak tracking. Adaptive cancellation (4b) is implemented and tested but not yet evaluated; see [docs/decisions.md](docs/decisions.md).
 
 Design decisions and the evidence behind each: [docs/decisions.md](docs/decisions.md).
 
@@ -129,6 +129,51 @@ Nearly half of table-soccer windows and two-fifths of cycling windows contain sa
 
 b2-zp MAE ranges from 8.75 (S7) to 45.87 (S5). **S5 is investigated in full in [results/s5_investigation.md](results/s5_investigation.md)** and is excluded from nothing. In short: its oracle error is the *best* in the cohort and its resting b2 MAE is ordinary (3.95 vs 3.23 median), so alignment and sensor contact are fine. What differs is heart rate: S5's labels are higher in every activity, mean 125.8 bpm against a cohort mean of 86.6, and above 120 bpm in 54% of windows against 7.7% elsewhere. That was verified rather than assumed — ECG and PPG agree independently at rest (median 92.7 vs 91.9 bpm over 300 sitting windows), and inspection of chest-ECG strips in high-rate, low-motion, unclipped windows shows the stored R-peaks sitting on QRS complexes with T waves unmarked, RR intervals matching the labels to 0.1 bpm, and no short/long alternation that would indicate T-wave oversensing (0.00% of S5's high-rate windows, against 0.00% for S7 and 0.36% for S10). The low-frequency lock that causes the error is cohort-wide, but a true HR near 160 turns each locked window into a ~130 bpm error instead of a ~40 bpm one. Under MAPE, S5 is 35.8% against a cohort median of 19.1% — still worst, far less extreme.
 
+## Motion compensation (Stage 4)
+
+Two components, ablated separately, LOSO, every gain measured against b2-zp. Hyperparameters are chosen **inside each fold on training subjects only** — a configuration picked on all 15 subjects instead would make the tracker look 2.5 bpm better than it is (`results/stage4_selected_configs.csv`).
+
+- **Masking (4a)** builds a motion spectrum from the three wrist-ACC axes plus the magnitude signal, then notches the top-K prominent peaks together with their ½× and 2× harmonics, with notch width set by the measured width of each ACC peak. Windows where the wrist is still are left alone. Bins are attenuated, never zeroed, so a heart rate that coincides with a cadence line stays findable.
+- **Tracking** picks the prominent spectral peak nearest a mean-filtered prediction of recent estimates, and resets when the chosen peak keeps disagreeing with the prediction. **The reset reads only the estimates**, so it needs no quality measure — which matters because the SQI does not work under motion (D-016).
+
+| Method | Pooled MAE | MAPE | Fold SD | Worst fold | Paired gain vs b2-zp [95% CI] |
+|---|---|---|---|---|---|
+| b2-zp | 18.98 | 19.2% | 9.40 | 45.87 | — |
+| +tracker | 17.53 | 17.5% | 6.83 | 34.12 | +1.45 [−1.45, +4.65] |
+| +mask | 18.61 | 18.9% | 9.23 | 45.33 | +0.36 [+0.04, +0.72] |
+| **+mask+tracker** | **15.80** | **15.6%** | 6.04 | 28.74 | **+3.18 [+1.00, +5.83]** |
+| *SpaMa* (Reiss et al. 2019) | *15.56* | — | *7.5* | — | published |
+| *SpaMaPlus* (Reiss et al. 2019) | *11.06* | — | *4.8* | — | published |
+
+Pooled over all 64,697 windows **including transients**, which is what the published evaluation covers. CIs are from bootstrapping subjects; gains are paired per subject.
+
+**The tracker alone is within per-subject variability.** Its mean gain is 1.45 bpm but the CI spans zero and only 9 of 15 subjects improve, with S13 losing 10.5 bpm. It is not reported as a result on its own. Combined with masking the gain is real (11 of 15 subjects improve), and the combination is worth more than the parts — masking alone is worth 0.36 bpm, but it makes the tracker's job possible by removing the motion lines the tracker would otherwise lock onto.
+
+**Against the published baselines:** +mask+tracker at 15.80 essentially matches SpaMa (15.56), the method 4a reimplements, and falls well short of SpaMaPlus (11.06). Per subject we beat SpaMa on 5 of 15 and SpaMaPlus on 0 of 15 (`results/stage4_per_subject.csv`, published values from their Table 10). The gap is the honest state of this implementation, not a tuning detail.
+
+### Where it gets worse
+
+| Activity | b2-zp | +tracker | +mask | +mask+tracker |
+|---|---|---|---|---|
+| sitting | 2.82 | 2.65 | 2.81 | **2.63** |
+| working | 8.62 | 5.62 | 8.73 | **4.92** |
+| driving | 13.42 | 7.73 | 13.56 | **7.50** |
+| lunch | 14.26 | 9.21 | 14.25 | **6.64** |
+| table soccer | 33.27 | 29.08 | 33.26 | **26.73** |
+| walking | 29.61 | 31.44 | 28.98 | **25.18** |
+| cycling | **29.75** | 42.91 | 27.38 | 36.96 |
+| stairs | **38.17** | 52.55 | 37.37 | 56.01 |
+
+**The full method is much worse than the baseline on stairs (+17.8 bpm) and cycling (+7.2 bpm).** Tracking assumes the previous estimate is informative; during sustained vigorous motion the spectrum offers a stable *wrong* peak, and the tracker holds onto it instead of jumping around. On the quiet activities it is transformative — lunch halves, working nearly halves — and the pooled figure hides both facts. This is why the per-activity table exists.
+
+### Does masking remove what it targets?
+
+Yes, and the check is mechanistic rather than an MAE reading (`results/masked_taxonomy.csv`). The `acc_locked` share of error windows falls from 23.3% to 13.1% cohort-wide, and in walking from **55.1% to 26.1%** (1,626 → 694 windows). The residual 13.1% is at the **13.6% chance rate** measured by the permutation null, so after masking almost no *real* accelerometer lock remains.
+
+But total error windows fall only 2.4% (17,485 → 17,074): the errors are reclassified into `other`, not removed. That is the difference between masking's 0.36 bpm and the 3.18 bpm the combination achieves, and it says the remaining failure is not accelerometer lock.
+
+Mean masked energy for the selected configurations is **7.7%** of in-band power, well under the 30% flag.
+
 ## Reproduce
 
 ```bash
@@ -143,6 +188,10 @@ python -m src.eval.investigate_s5   # results/s5_investigation.md + figures/s5_w
 python -m src.eval.verify_s5_hr     # ECG verification of S5's heart rate
 python -m src.eval.plot_motion_collision  # figures/motion_collision.png (hero image)
 python -m src.eval.validate_sqi     # results/sqi_validation.csv (~4 min: subject bootstrap)
+python -m src.eval.permutation_null # results/acc_lock_permutation.csv
+python -m src.eval.error_taxonomy   # results/error_taxonomy.csv
+python -m src.eval.stage4           # the ablation (~4 min)
+python -m src.eval.masked_taxonomy  # mechanistic check on masking
 ```
 
 The first real-data run unpickles all 15 subjects (~23 GB) and builds a 3.5 GB cache in about 40 s; later runs take about 3 s.

@@ -223,3 +223,53 @@ Every number here is copied from a committed results file, test or script output
 - **Evidence:** of 17,485 non-transient windows with |error| > 10 bpm — `acc_locked` 23.3%, `harmonic` 10.2%, `floor` 0.2%, `other` **66.2%** (`results/error_taxonomy.csv`). Accelerometer lock concentrates where expected: 55.1% of walking errors and 38.9% of stairs errors, against 10–16% elsewhere. Within it, **58% sit on the 0.5× stride subharmonic**, 39% on the step fundamental and 3% on 2× — the same asymmetry the hero figure shows (D-021).
 - **On `other`:** it exceeds the 40% threshold the scope set, and is reported without widening the tolerances. It is not random: 91.9% of `other` estimates fall *below* the true HR, 64.8% are under 60 bpm, and 31.9% lie within 10 bpm of half the true rate — just outside the ±3 bpm harmonic rule. Loosening the accelerometer tolerance to ±8 bpm would absorb 22.4% of it and to ±20 bpm, 60.6%, which suggests much of `other` is motion lock that the single dominant accelerometer peak does not capture, rather than a separate mechanism.
 - **Also:** `acc_locked` (0.485), `harmonic` (0.495) and `other` (0.491) all have a median SQI within 0.01 of the 0.490 median across all error windows, so the current quality measure separates none of the three classes that matter — consistent with D-016. Only `floor` sits lower, at 0.440, and that class is 35 windows.
+- **Correction (2026-09-25, `2a40cd2`):** the widened-tolerance sentence above is withdrawn in part. A permutation null — each window's estimate paired with another window's ACC spectrum, same activity, 20 shuffles — gives a chance lock rate of 13.6% at ±3 bpm, 31.7% at ±8 and **67.3% at ±20** (`results/acc_lock_permutation.csv`). So the ±3 headline survives but the true excess is ~10pp, not 23.3%; ±8 carries information only for stairs (+24.4pp) and walking (+6.0pp); and **±20 carries none at all** (69.1% observed against a 67.3% null). The "±20 bpm would absorb 60.6% of `other`" figure is not used anywhere.
+
+### D-026 · Accelerometer-lock attribution is tested against a permutation null
+- **Date / commit:** 2026-09-25 · `2a40cd2`
+- **Status:** adopted
+- **Decision:** any "the estimate sits on a motion line" claim is reported against the rate the same rule produces on mismatched pairs, and tolerances whose observed rate does not clear that null are not used.
+- **Evidence:** `results/acc_lock_permutation.csv`. Chance rates are 13.6% (±3 bpm), 31.7% (±8) and 67.3% (±20) against observed 23.3%, 40.4% and 69.1%.
+- **Rejected:** quoting raw within-tolerance shares. Three harmonic lines and a ±20 bpm window cover most of the searchable band, so a large number there means nothing.
+- **Depends on this:** D-025's corrected wording, and the masking claim in D-030 — post-masking lock of 13.1% is meaningful only because the chance rate is known to be 13.6%.
+
+### D-027 · Motion spectrum from four channels; notch depth is a power gain
+- **Date / commit:** 2026-09-25 · `049e134`
+- **Status:** adopted
+- **Decision:** the motion spectrum sums the power spectra of the three wrist-ACC axes and of the magnitude signal. Masking notches the top-K prominent peaks and each peak's 0.5× and 2× harmonics, with notch σ proportional to the measured width of that ACC peak and a multiplicative Gaussian attenuation rather than zeroing. K, prominence, width factor, depth and a motion gate are chosen in-fold.
+- **Evidence:** 58% of confirmed locks sit on the 0.5× stride subharmonic and only 3% on 2× (D-025), so a single-line mask would miss most of the damage. Per-axis spectra depend on how the watch sits on the wrist; the magnitude is orientation-invariant. Selected configurations remove 7.7% of in-band power on average, well under the 30% flag (`results/stage4_selected_configs.csv`).
+- **Rejected:** masking the argmax alone; hard-zeroing bins, which destroys a heart rate that coincides with a cadence line; and a fixed notch width. Also rejected: a depth grid bottoming out at 0.1 — **depth is a power gain**, and a cadence line carrying 16× the cardiac power survives it, so the grid reaches 0.02.
+- **Also:** windows whose ACC magnitude SD is below a gate are left unmasked. Without it the normalised spectrum of a still wrist is noise and peak-picking invents notches; an early run masked 47% of the spectrum during sitting and made resting error worse.
+
+### D-028 · Tracking selects the nearest prominent peak, and resets on the estimates alone
+- **Date / commit:** 2026-09-25 · `049e134`
+- **Status:** adopted
+- **Decision:** the tracker predicts from a mean filter over recent estimates, selects the prominent spectral peak nearest that prediction with no hard search window, and re-seeds from the unconstrained argmax after `reset_after` consecutive windows whose chosen peak is more than `jump_bpm` from the prediction. No quality measure is involved.
+- **Evidence:** D-016 forbids SQI-gated resets under motion, and this rule needs none. The design matters: a hard ±12 bpm window with the jump test on the global argmax scored 17.53 → the same grid with nearest-peak selection reached the numbers in D-030, because under motion the argmax disagrees with the prediction almost every window, so the hard-window variant reset continuously and behaved like no tracker at all.
+- **Rejected:** testing the jump against the *constrained* choice. A unit test caught it: the track then creeps by up to `jump_bpm` per window without ever registering a jump, following a genuine 80 → 160 bpm change only as far as 102 (`tests/test_stage4.py::test_tracker_resets_after_persistent_disagreement`).
+- **Depends on this:** the whole Stage 4 result. Tracking contributes most of the combined gain.
+
+### D-029 · No taper on the PPG spectrum, so the ablation isolates masking
+- **Date / commit:** 2026-09-25 · `049e134`
+- **Status:** adopted, with a known cost
+- **Decision:** the masked and tracked variants take the same plain FFT as b2-zp. A window function is not applied.
+- **Evidence:** tapering reduces spectral leakage and would improve the estimate on its own, so folding it into "masking" would credit motion handling with a gain that a window function delivered.
+- **Cost, stated:** leakage from a strong motion line spreads well beyond its own bin, so a narrow notch cannot remove it — visible in `tests/test_stage4.py::test_masking_recovers_hr_when_motion_dominates`, where a 4× cadence needs a notch both deep and wide before the cardiac peak wins. A Hann taper is a candidate improvement and, if adopted, becomes its own ablation row rather than being absorbed into 4a.
+
+### D-030 · Stage 4 result: tracking carries the gain, masking makes it possible, stairs and cycling get worse
+- **Date / commit:** 2026-09-25 · `78608f6`
+- **Status:** adopted
+- **Decision:** the reported method is masking plus tracking. The tracker alone is **not** reported as a result.
+- **Evidence** (`results/stage4_ablation.csv`, `results/stage4_per_subject.csv`, paired subject bootstrap): pooled MAE including transients b2-zp 18.98 → +tracker 17.53 → +mask 18.61 → +mask+tracker **15.80**. Paired gains: tracker alone +1.45 bpm [−1.45, +4.65], 9/15 subjects improved — **CI spans zero, within per-subject variability**; masking alone +0.36 [+0.04, +0.72]; together +3.18 [+1.00, +5.83], 11/15 improved.
+- **Against published work:** SpaMa 15.56 and SpaMaPlus 11.06 on the same dataset and protocol (Reiss et al. 2019, Tables 4 and 10). Our combination matches SpaMa, which 4a reimplements, and is 4.7 bpm short of SpaMaPlus; per subject we beat SpaMa on 5/15 and SpaMaPlus on 0/15.
+- **Where it fails:** stairs 38.17 → 56.01 and cycling 29.75 → 36.96, both far worse than the baseline. Tracking assumes the previous estimate is informative; under sustained vigorous motion the spectrum offers a stable wrong peak and the tracker holds it. The same mechanism halves error on lunch (14.26 → 6.64) and working (8.62 → 4.92).
+- **Mechanistic confirmation:** `acc_locked` falls from 23.3% of error windows to 13.1% cohort-wide and 55.1% → 26.1% in walking, landing at the 13.6% chance rate of D-026 — masking removes essentially all real lock. Total error windows fall only 2.4%, so the residual failure is not accelerometer lock (`results/masked_taxonomy.csv`).
+- **On hyperparameter choice:** selecting in-fold rather than globally costs 2.51 bpm for the tracker and 1.40 for the combination, and only 7/15 and 9/15 folds pick the global best (`results/stage4_selected_configs.csv`). The globally chosen figures are not reported as results.
+
+### D-031 · Adaptive cancellation deferred; confidence term not attempted
+- **Date / commit:** 2026-09-25 · `049e134`
+- **Status:** open — deferred to Week 3 hardening
+- **Decision:** NLMS and batch least-squares cancellation are implemented and unit-tested but not evaluated in the ablation, and the motion-aware confidence term is not attempted.
+- **Reason:** the session's priority order put masking and tracking first, with 4b named as the cut. The published precedent reaches 11.06 with masking and tracking alone, so the ablation's story stands without it. The confidence term was optional and is unnecessary for the reset rule adopted in D-028, which reads only the estimates.
+- **What exists:** `src/models/adaptive.py`, vectorised across windows so a subject's 4,600 windows filter in about a second, with tests covering reference removal and the absence of state leaking across windows. `src/eval/stage4.py` already wires `+adaptive` and `+adaptive+tracker` rows; they are produced by running it without `--no-adaptive`.
+- **When it runs:** the clipping comparison retracted in D-018 becomes meaningful there — table soccer (47.5% of windows flagged) and cycling (39.0%) are the test cases for a distorted reference degrading cancellation.
