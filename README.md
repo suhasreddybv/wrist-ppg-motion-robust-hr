@@ -6,9 +6,13 @@ Heart-rate estimation from wrist PPG during real-world movement on PPG-DaLiA, wi
 
 *Band-passed wrist-PPG spectrum over the estimator's own 8 s windows for S4, with the ECG ground-truth heart rate (solid), the naive spectral-peak estimate (crosses) and the dominant wrist-accelerometer frequency with its stride subharmonic (dashed, dotted). During stairs the estimate sits on an accelerometer line in 71% of windows and on the true heart rate in 11%, while at rest it tracks the heart rate in 88% — the estimator is following the motion, not the heart. S4 was selected by rule: its stairs MAE is the closest of the 15 subjects to the cohort median.*
 
-**Result.** Accelerometer-informed spectral masking plus peak tracking cuts heart-rate error on PPG-DaLiA from **18.98 to 15.80 bpm** MAE, leave-one-subject-out over all 64,697 windows — a paired gain of **+3.18 bpm [95% CI +1.00, +5.83]**, improving 11 of 15 subjects. That **replicates SpaMa (15.56)**, the published method this reimplements, and the spread across subjects is tighter than theirs (fold SD 6.04 against 7.5). It remains 4.7 bpm behind SpaMaPlus (11.06).
+**Result.** Accelerometer-informed spectral masking, peak tracking, a fold-derived search bound and a sustained-wrongness reset cut heart-rate error on PPG-DaLiA from **18.98 to 12.50 bpm** MAE, leave-one-subject-out over all 64,697 windows — a paired gain of **+6.48 bpm [95% CI +3.96, +9.47]**, improving **14 of 15 subjects**.
 
-The method is **worse than predicting a constant** on stairs and cycling, and it trades many short errors for a few very long ones. Both are documented below rather than buried in the pooled figure.
+**For comparison with published work the figure is 15.80 bpm**, which is the same method without the search bound, because SpaMa and SpaMaPlus search the full band. That replicates SpaMa (15.56); SpaMaPlus reaches 11.06.
+
+**Bland–Altman is the number a clinical reader should weigh.** Limits of agreement span **−58.8 to +35.4 bpm**, a 94 bpm window, and the bias is negative on every activity: this estimator **systematically under-reads**, which is exactly what subharmonic and low-frequency lock predict. A 12.50 bpm MAE does not make it a measurement device.
+
+It remains **worse than predicting a constant on three of eight activities**, and its errors, while shorter than before, still last far longer than the baseline's.
 
 **Status:** Stages 0–4 are done — validated data layer, label-aligned windowing, band-pass with signal quality, four LOSO baselines, and motion compensation by spectral masking and peak tracking. Adaptive cancellation (4b) is implemented and tested but not yet evaluated; see [docs/decisions.md](docs/decisions.md).
 
@@ -174,7 +178,7 @@ Pooled over all 64,697 windows **including transients**, which is what the publi
 
 ![Per-activity MAE for b2-zp and mask+tracker with the b0 constant baseline drawn across each activity](figures/per_activity_mae.png)
 
-**On stairs and cycling the full method is worse than predicting a constant.** Not merely worse than b2-zp: stairs **56.01 against the b0 constant's 30.95**, cycling **36.96 against 33.74**. A method that loses to "always guess the mean heart rate" on two of eight activities has not solved those activities, and the grey line in the figure above makes that visible at a glance. Tracking assumes the previous estimate is informative; during sustained vigorous motion the spectrum offers a stable *wrong* peak and the tracker holds it. On the quiet activities the same mechanism is transformative — lunch 14.26 → 6.64, working 8.62 → 4.92.
+**On four activities this method is worse than predicting a constant.** Not merely worse than b2-zp: stairs **56.01 against the b0 constant's 30.95**, table soccer 26.73 against 14.02, walking 25.18 against 15.46, cycling 36.96 against 33.74. A method that loses to "always guess the mean heart rate" on half the protocol has not solved those activities. Tracking assumes the previous estimate is informative; during sustained vigorous motion the spectrum offers a stable *wrong* peak and the tracker holds it. On the quiet activities the same mechanism is transformative — lunch 14.26 → 6.64, working 8.62 → 4.92. Week 3 addresses this directly; see below.
 
 ### Does masking remove what it targets?
 
@@ -209,6 +213,57 @@ Mean error is not the whole story for a wearable. Measuring runs of consecutive 
 
 The cause is visible in the reset counts: the reset fires **0.3 times per 1,000 windows on stairs and 1.4 on cycling**, and never at all on most activities. It triggers on jumps, and a smoothly tracked wrong estimate never jumps. A reset that detects sustained wrongness rather than sudden movement is the obvious next step, and is logged as a Week 3 item.
 
+## Breaking the lock-in (Week 3)
+
+Two components, both aimed at the lock-in rather than at pooled MAE.
+
+**A fold-derived lower bound.** Estimates below ~40 bpm are always wrong in this cohort while the lowest ECG label is 41.7 bpm, so the search space is restricted. The bound is **derived inside each fold** as the minimum training label less a margin chosen on training subjects — never the global minimum, never a hand-picked constant. Every fold selected a zero margin, giving 41.7 bpm for fourteen folds and 41.9 for the fold that holds out the subject carrying the cohort minimum. It changes **5,555 of 64,697 windows (8.6%)**, from 136 windows for S7 to 779 for S5, so the gain is not a handful of windows (`results/week3_bound_effect.csv`).
+
+**A sustained-wrongness reset.** The jump reset cannot see a smoothly tracked wrong estimate. Two formulations were tried: a hard rank test (the tracked peak must stay within the top-N peaks) and a continuous height-ratio test. **The ratio test won on every fold** — the tracked peak must keep at least 30% of the spectral maximum's height for five consecutive windows — and it beat the best rank formulation by 1.3 bpm pooled (12.50 against 13.82). Both are in `results/week3_ablation.csv`.
+
+| Method | Pooled MAE | MAPE | Paired gain [95% CI] | Improved |
+|---|---|---|---|---|
+| b2-zp | 18.98 | 19.2% | — | — |
+| +bound | 16.94 | 17.0% | +2.04 [+1.57, +2.63] | **15/15** |
+| +tracker | 17.53 | 17.5% | +1.45 [−1.42, +4.53] | 9/15 |
+| +mask | 18.61 | 18.9% | +0.36 [+0.05, +0.73] | 10/15 |
+| +mask+tracker | 15.80 | 15.6% | +3.18 [+1.00, +5.92] | 11/15 |
+| +mask+tracker+bound | 12.97 | 12.8% | +6.00 [+3.38, +9.15] | 13/15 |
+| **+mask+tracker+bound+reset** | **12.50** | **12.7%** | **+6.48 [+3.96, +9.47]** | **14/15** |
+
+The bound alone improves **every subject** — the only component in this repository that does.
+
+### Did it fix what it targeted?
+
+**Per activity against the b0 constant** (`results/week3_vs_b0.csv`):
+
+| Activity | b0 | mask+tracker | Week 3 | |
+|---|---|---|---|---|
+| sitting | 29.28 | 2.63 | **2.44** | beats b0 |
+| working | 17.02 | 4.92 | **4.67** | beats b0 |
+| driving | 14.11 | 7.50 | **7.61** | beats b0 |
+| lunch | 13.70 | 6.64 | **7.41** | beats b0 |
+| cycling | 33.74 | 36.96 ✗ | **21.63** | **now beats b0** |
+| stairs | 30.95 | 56.01 ✗ | 35.84 | still worse |
+| table soccer | 14.02 | 26.73 ✗ | 21.69 | still worse |
+| walking | 15.46 | 25.18 ✗ | 22.05 | still worse |
+
+**Cycling is fixed — 36.96 → 21.63, from worse than a constant to comfortably better. Stairs, table soccer and walking are not**, though stairs improves by 20 bpm. Three of eight activities still lose to guessing the mean.
+
+**Error persistence** (`results/week3_persistence.csv`), the other target:
+
+| | Runs | Median | p90 | Longest | Error time in runs > 30 s |
+|---|---|---|---|---|---|
+| b2-zp | 3,574 | 3 | 10 | 99 | 27.6% |
+| mask+tracker | 2,876 | 1 | 6 | 409 | 61.8% |
+| **Week 3** | 2,965 | 2 | 7 | **323** | **54.1%** |
+
+Improved but not solved. On stairs the p90 run falls from **210 windows to 79** and on cycling from 48 to 12; cohort-wide, long-run error time falls from 61.8% to 54.1%. It remains double the baseline's 27.6%, so **the persistence trade is reduced, not eliminated**.
+
+**Reset rate** (`results/week3_reset_rates.csv`): 4.7 per 1,000 windows cohort-wide, peaking at 9.6 on stairs — roughly one window in 104, far below the one-in-five degeneracy threshold. The tracker has not collapsed into a no-op.
+
+**Diagnostic A on the new residual errors: unchanged.** A peak within 3 bpm of the true HR still survives in **60.4%** of remaining error windows, against 58.8% before. The selection rule improved, but what it leaves behind is the same kind of failure — the information is still there and still not being chosen. The headroom Diagnostic A identified has not been consumed.
+
 ## Agreement, strata and error structure (Stage 5)
 
 **Agreement with the ECG reference** (`results/agreement.csv`), non-transient windows: pooled Pearson r is 0.399 for b2-zp and 0.402 for mask+tracker, with Bland–Altman bias improving from −14.74 to −11.66 bpm and limits of agreement from [−66.3, +36.9] to [−58.8, +35.4]. The pooled correlation barely moves because between-activity spread dominates it; per activity the change is large — driving r 0.368 → 0.699, lunch 0.283 → 0.779, working 0.336 → 0.725, while stairs falls 0.196 → 0.130. The bias is negative everywhere: this estimator systematically *under*-reads, which follows from motion lines sitting below the cardiac rate.
@@ -231,7 +286,7 @@ Within-stratum spread dwarfs any difference between strata: the type-3 subjects 
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 # obtain PPG-DaLiA first: see data/README.md
-pytest                              # 101 tests; 13 need the dataset and skip without it
+pytest                              # 106 tests; 13 need the dataset and skip without it
 python -m src.data.plot_rest_bvp    # figures/s1_rest_bvp.png and the DC numbers above
 python -m src.features.report_sqi   # results/02_sqi_by_activity.csv
 python -m src.eval.report_baselines # results/baselines_*.csv, clipping table, stop-condition checks
@@ -245,14 +300,17 @@ python -m src.eval.stage4           # the ablation (~4 min)
 python -m src.eval.masked_taxonomy  # mechanistic check on masking
 python -m src.eval.diagnostics      # surviving-peak and error-persistence diagnostics
 python -m src.eval.stage5           # skin strata, agreement, and the Stage 5 figures
+python -m src.eval.week3            # search bound + sustained-wrongness reset (~4 min)
 ```
 
 The first real-data run unpickles all 15 subjects (~23 GB) and builds a 3.5 GB cache in about 40 s; later runs take about 3 s.
 
 ## Limitations and failure cases
 
-- **Worse than a constant on two activities.** On stairs (56.01 vs b0's 30.95) and cycling (36.96 vs 33.74) the full method loses to predicting the mean heart rate.
-- **Errors last longer.** Mean error falls while individual error episodes lengthen: 61.8% of error time sits in runs over 30 s, against 27.6% for the baseline, with a worst episode of about 13 minutes. For continuous monitoring this trade may not be worth making.
+- **Worse than a constant on three activities.** After Week 3 the method still loses to predicting the mean heart rate on stairs (35.84 vs b0's 30.95), table soccer (21.69 vs 14.02) and walking (22.05 vs 15.46). Cycling was fixed; four activities were affected before.
+- **Errors last longer.** Mean error falls while individual error episodes lengthen: 54.1% of error time sits in runs over 30 s after Week 3, against 27.6% for the baseline, with a worst episode of about 10 minutes. Reduced from 61.8% but not eliminated, and for continuous monitoring this trade may not be worth making.
+- **The search bound is a property of this cohort, not of physiology.** It is derived per fold from the training subjects' lowest heart rate and would be wrong for a bradycardic, athletic or beta-blocked population. Published comparisons use the 15.80 bpm figure, which does not include it.
+- **Both Week 3 components were designed after seeing test-set results** (D-041). Hyperparameters are still chosen in-fold, but the choice of what to build was not blind.
 - **Skin types 2–4 only**, with one type-2 and three type-4 subjects. There are no type V or VI subjects, so nothing here speaks to the melanin confound in optical heart rate, and the stratified table settles nothing.
 - **BVP is manufacturer-processed**, not raw photodiode output, and perfusion index is unavailable.
 - **No window function.** The spectra are untapered so that the ablation isolates masking; leakage from strong motion lines is therefore wider than it needs to be, and a Hann taper is an untested improvement that would invalidate every baseline number here if added.

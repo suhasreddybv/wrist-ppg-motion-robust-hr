@@ -207,7 +207,7 @@ Every number here is copied from a committed results file, test or script output
 
 ### D-024 · The floor hypothesis is rejected; a lower search bound is proposed on different evidence
 - **Date / commit:** 2026-09-23 · `c855492` (supersedes D-022)
-- **Status:** proposed — not applied; to be implemented, if at all, as its own Stage 4 component
+- **Status:** implemented 2026-09-26 as D-039; the proposal below stands as written
 - **Decision:** floor-pinning as described in D-022 does not exist at cohort scale and that line of work is dropped. Separately, a lower search bound of **40 bpm** is *proposed* on different evidence, to be ablated on its own rather than folded into any motion-handling gain.
 - **Evidence against D-022:** windows whose estimate sits within 2 bpm of the lowest in-band frequency (24.375 bpm on the b2-zp grid) are **0.2%** of the 17,485 non-transient error windows — below the 10% stop threshold (`results/error_taxonomy.csv`). D-022 generalised from five S5 windows that all read exactly 30.0 bpm, which is the lowest bin of b2's **coarse 512-point grid**; on b2-zp's 4,096-point grid the pile-up at the exact bin does not survive. The failure those windows showed is real but belongs to `acc_locked` or `other`, not to a distinct floor class.
 - **Evidence for a 40 bpm bound:** 7.03% of all non-transient windows produce an estimate in [24, 40) bpm, and **100% of estimates below 40 bpm are errors over 10 bpm**, while the lowest ECG label anywhere in the cohort is 41.7 bpm and only 0.53% of labels fall below 45 (`results/error_taxonomy.csv`, true-HR percentiles per activity).
@@ -306,7 +306,7 @@ Every number here is copied from a committed results file, test or script output
 - **Note:** implemented and unit-tested in `src/models/adaptive.py`, wired into the ablation, never evaluated. The clipping comparison retracted in D-018 becomes meaningful when it runs.
 
 ### D-037 · Week 3: a reset that detects sustained wrongness rather than jumps
-- **Status:** open — expected effect: shortens the long error episodes D-033 measures
+- **Status:** implemented 2026-09-26 as D-040
 - **Decision:** none yet. This falls directly out of the persistence result: the current reset asks "did the estimate move?", when the failure is an estimate that does not move and is wrong.
 - **Candidate signals:** agreement between the tracked peak and the accelerometer harmonic family, the rank of the tracked peak in the current spectrum (D-032 shows the true peak is usually rank 2 or 3), or time since the last reset.
 - **Constraint:** any such signal faces the D-014 bar — within-activity AUROC against error, subject-bootstrapped CIs — before it gates anything.
@@ -315,3 +315,41 @@ Every number here is copied from a committed results file, test or script output
 - **Status:** open
 - **Decision:** none yet. Stage-by-stage detail moves to `docs/`, the README keeps the headline result, the motion-collision figure, the per-activity table and the limitations.
 - **Reason:** the README now carries the whole pipeline narrative and is long past the eight-minute reading path the project is optimised for.
+
+### D-039 · The search bound, derived inside each fold
+- **Date / commit:** 2026-09-26 · `52e65b1` (implements D-024)
+- **Status:** adopted, as a separately ablated component and with a disclosure
+- **Decision:** selection is restricted to frequencies at or above a bound computed **inside each fold** as `min(training-subject labels) − margin`, with the margin chosen on training subjects from {0, 5, 10} bpm. The rule lives in `fold_bound()`. b2-zp is left untouched as the reference.
+- **Measured:** every fold chose a zero margin, giving 41.7 bpm for fourteen folds and 41.9 for the fold holding out the subject who carries the cohort minimum — so the held-out subject genuinely never contributes to its own bound. It alters **5,555 of 64,697 windows (8.6%)**, between 136 (S7) and 779 (S5) per subject (`results/week3_bound_effect.csv`). Alone it is worth +2.04 bpm [+1.57, +2.63] and **improves all 15 subjects**, the only component here that does.
+- **Disclosure:** SpaMa and SpaMaPlus search the full band, so this is a departure from the published protocol. The repository reports **15.80 bpm without the bound** whenever comparing to published numbers and 12.50 with it.
+- **Caveat, carried unchanged from D-024:** this is a property of *this* cohort, not of physiology. It would be wrong for a bradycardic, athletic or beta-blocked population, and any deployment would need its own bound or none.
+
+### D-040 · The sustained-wrongness reset is a height-ratio test, not a rank test
+- **Date / commit:** 2026-09-26 · `52e65b1` (implements D-037)
+- **Status:** adopted
+- **Decision:** alongside the jump reset, the track is re-seeded when the tracked peak holds less than 30% of the spectral maximum's height for five consecutive windows. The hard rank test is implemented and reported but not used.
+- **Evidence:** the ratio formulation was selected by **15/15 folds** and beats the best rank variant by 1.3 bpm pooled (12.50 against 13.82); all twelve variants are scored in the run output. Rank is the coarser signal — a peak can fall to rank 3 while still being nearly as tall as the maximum, and can be rank 1 in a spectrum with no real structure.
+- **Degeneracy check:** resets fire **4.7 times per 1,000 windows** cohort-wide, peaking at 9.6 on stairs — about one window in 104, far below the one-in-five threshold that would indicate the tracker had collapsed into a no-op (`results/week3_reset_rates.csv`). That was the failure that cost 2.7 bpm in D-028, and it is now checked explicitly.
+- **Effect on persistence (D-033's numbers):** cohort-wide, error time in runs over 30 s falls from 61.8% to **54.1%**, the longest episode from 409 windows to 323, and on stairs the p90 run from 210 windows to **79**. Still roughly double the baseline's 27.6%: **reduced, not eliminated**.
+
+### D-041 · Both Week 3 components were designed after seeing test-set results
+- **Date / commit:** 2026-09-26 · `52e65b1`
+- **Status:** adopted (disclosure)
+- **Decision:** recorded explicitly, as was done for the tracker revision in D-028.
+- **What happened:** the bound was motivated by the cohort's single worst window (S5 cycling, true 173 bpm, estimate 30) and by D-024's finding that estimates under 40 bpm are always wrong — both observed on the full dataset. The reset was motivated by the persistence diagnostic, also computed on the full dataset. **Every hyperparameter is still chosen inside the fold**, so the fitted quantities are clean, but the *design choice* of what to build was informed by the test set.
+- **What this means for the numbers:** the in-fold figures are not optimistically biased in the usual sense, but neither are they a blind evaluation of a pre-registered method. A genuinely held-out cohort is the only way to settle that, and this dataset cannot provide one.
+- **Rejected:** presenting the Week 3 gain as if the components had been specified in advance.
+
+### D-042 · The per-activity regression was understated in the shipped README
+- **Date / commit:** 2026-09-26 · `52e65b1`
+- **Status:** adopted (correction)
+- **Decision:** the claim that mask+tracker was "worse than predicting a constant on stairs and cycling" is corrected: it was worse than the b0 constant on **four** activities — stairs (56.01 vs 30.95), table soccer (26.73 vs 14.02), walking (25.18 vs 15.46) and cycling (36.96 vs 33.74).
+- **How it happened:** the Week 2 brief named stairs and cycling, and that pairing was carried into the README without checking the remaining activities against `results/baselines_per_activity.csv`. Stairs and cycling were the activities worse than *b2-zp*; four were worse than *b0*.
+- **After Week 3:** cycling now beats b0 (21.63 vs 33.74). Stairs, table soccer and walking still do not (`results/week3_vs_b0.csv`).
+
+### D-043 · Diagnostic A is unchanged by the Week 3 components
+- **Date / commit:** 2026-09-26 · `52e65b1`
+- **Status:** adopted (finding)
+- **Decision:** the selection headroom identified in D-032 is recorded as still open after Week 3.
+- **Evidence:** among the errors the Week 3 method leaves behind, a peak within 3 bpm of the true HR survives in **60.4%** of windows, against 58.8% for the masked baseline (`results/week3_surviving_peak.csv`). MAE improved by 6.48 bpm, but what remains is the same failure in the same proportion.
+- **Reading:** the bound and the reset removed error *episodes* without changing the character of the residual error. A better selection rule — not a better filter — is still the open direction.
