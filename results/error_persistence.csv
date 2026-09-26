@@ -1,0 +1,19 @@
+activity,method,n_runs,n_error_windows,median_run,p90_run,longest_run,share_in_runs_over_30s,resets_per_1000_windows
+sitting,b2-zp,118,332,2.0,5.299999999999997,26,0.0783,
+sitting,mask+tracker,162,362,1.0,4.0,19,0.1436,0.0
+stairs,b2-zp,264,2175,4.5,20.0,76,0.5103,
+stairs,mask+tracker,51,3016,5.0,210.0,242,0.9678,0.31
+table soccer,b2-zp,226,1732,4.0,17.5,99,0.4821,
+table soccer,mask+tracker,163,1625,2.0,30.600000000000193,155,0.7532,0.0
+cycling,b2-zp,222,1518,4.0,13.0,87,0.3801,
+cycling,mask+tracker,125,2307,2.0,48.20000000000002,277,0.8951,1.44
+driving,b2-zp,575,2201,3.0,8.0,29,0.0909,
+driving,mask+tracker,523,1743,1.0,6.0,118,0.3356,0.0
+lunch,b2-zp,1255,4779,3.0,8.0,40,0.108,
+lunch,mask+tracker,1168,3220,1.0,5.0,76,0.1984,0.0
+walking,b2-zp,401,2951,4.0,17.0,67,0.4754,
+walking,mask+tracker,161,2795,2.0,18.0,369,0.8565,0.21
+working,b2-zp,519,1797,3.0,7.0,22,0.0634,
+working,mask+tracker,528,1373,1.0,4.0,59,0.2083,0.0
+ALL (excl. transient),b2-zp,3574,17485,3.0,10.0,99,0.2763,
+ALL (excl. transient),mask+tracker,2876,16441,1.0,6.0,409,0.6182,0.15

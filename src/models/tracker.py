@@ -54,7 +54,7 @@ def peak_candidates(spectra: np.ndarray, freqs_bpm: np.ndarray, prominence: floa
 
 
 def track(spectra: np.ndarray, freqs_bpm: np.ndarray, cfg: TrackerConfig,
-          candidates: list[np.ndarray] | None = None) -> np.ndarray:
+          candidates: list[np.ndarray] | None = None, return_resets: bool = False):
     """Constrained peak selection over a sequence of in-band spectra (one row per window).
 
     spectra: (n_windows, n_bins) power, already masked or cancelled as required.
@@ -62,6 +62,7 @@ def track(spectra: np.ndarray, freqs_bpm: np.ndarray, cfg: TrackerConfig,
     """
     n = len(spectra)
     out = np.empty(n)
+    resets = np.zeros(n, dtype=bool)
     recent: deque[float] = deque(maxlen=max(1, cfg.history))
     jumps = 0
 
@@ -99,7 +100,8 @@ def track(spectra: np.ndarray, freqs_bpm: np.ndarray, cfg: TrackerConfig,
             choice = unconstrained
             recent.clear()
             jumps = 0
+            resets[i] = True
 
         out[i] = choice
         recent.append(choice)
-    return out
+    return (out, resets) if return_resets else out

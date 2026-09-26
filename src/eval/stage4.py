@@ -46,6 +46,14 @@ ADAPT_GRID = [AdaptiveConfig(method=m, order=o, mu=mu)
               for m, o, mu in [("nlms", 8, 0.1), ("nlms", 8, 0.05), ("nlms", 16, 0.1), ("ls", 8, 0.0)]]
 
 
+def config_from_label(label: str):
+    """Recover the MaskConfig / TrackerConfig a fold selected, from its recorded label."""
+    for cfg in MASK_GRID + TRACK_GRID:
+        if cfg.label() == label:
+            return cfg
+    raise KeyError(f"no configuration in the grids matches {label!r}")
+
+
 def _estimates(spec: np.ndarray, f_bpm: np.ndarray) -> np.ndarray:
     return f_bpm[spec.argmax(axis=1)]
 
