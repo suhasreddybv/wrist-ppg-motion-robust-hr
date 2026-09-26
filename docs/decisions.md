@@ -273,3 +273,45 @@ Every number here is copied from a committed results file, test or script output
 - **Reason:** the session's priority order put masking and tracking first, with 4b named as the cut. The published precedent reaches 11.06 with masking and tracking alone, so the ablation's story stands without it. The confidence term was optional and is unnecessary for the reset rule adopted in D-028, which reads only the estimates.
 - **What exists:** `src/models/adaptive.py`, vectorised across windows so a subject's 4,600 windows filter in about a second, with tests covering reference removal and the absence of state leaking across windows. `src/eval/stage4.py` already wires `+adaptive` and `+adaptive+tracker` rows; they are produced by running it without `--no-adaptive`.
 - **When it runs:** the clipping comparison retracted in D-018 becomes meaningful there — table soccer (47.5% of windows flagged) and cycling (39.0%) are the test cases for a distorted reference degrading cancellation.
+
+### D-032 · The cardiac peak survives masking: the residual failure is selection
+- **Date / commit:** 2026-09-26 · `03236e8`
+- **Status:** adopted (finding)
+- **Decision:** the residual Stage 4 error is treated as a selection problem, not as destroyed signal, and effort goes to the selection rule rather than to recovering the waveform.
+- **Evidence:** for masked windows still in error, a peak within 3 bpm of the true HR exists in 58.8% of them against a 36.3% chance rate from the D-026 null — +22.5 points (`results/surviving_peak.csv`). The excess is largest where the method fails worst: cycling 78.1% vs 34.1% chance, stairs 65.6% vs 36.8%. Among surviving peaks, 34.9% are rank 2 and 24.2% rank 3, so three in five are in the top three candidates.
+- **Rejected:** the alternative reading, that motion destroys the cardiac component and no single-window spectral method could recover it. If that were true the share would sit at chance; it does not.
+- **Depends on this:** D-033 and the Week 3 tracker work. It also means a better selection rule has measurable headroom rather than speculative headroom.
+
+### D-033 · The method trades many short errors for a few very long ones
+- **Date / commit:** 2026-09-26 · `03236e8`
+- **Status:** adopted (finding); mitigation open, see D-037
+- **Decision:** error persistence is reported beside MAE, and the trade is stated as a cost rather than folded into the headline.
+- **Evidence** (`results/error_persistence.csv`): b2-zp produces 3,574 error runs, median 3 windows, p90 10, longest 99, with 27.6% of error windows in runs over 30 s. mask+tracker produces 2,876 runs, median 1, p90 6, longest **409** (about 13 minutes), with **61.8%** of error time in runs over 30 s. On stairs p90 goes 20 → 210 windows.
+- **Mechanism:** the reset triggers on jumps, and a smoothly tracked wrong estimate never jumps. Resets fire 0.3 times per 1,000 windows on stairs and 1.4 on cycling, and not at all on most activities.
+- **Consequence:** for continuous monitoring a shorter mean error with longer episodes may be the worse product. The README states this rather than reporting the MAE gain alone.
+
+### D-034 · Week 3: six-window mean prediction for the tracker
+- **Status:** open — expected effect: closes part of the 4.7 bpm gap to SpaMaPlus
+- **Decision:** none yet. SpaMaPlus predicts from a mean over the last six estimates; this tracker's mean filter is dominated by the most recent estimate in practice, and that is the one named difference between the two.
+- **Target:** SpaMaPlus 11.06 bpm pooled (Reiss et al. 2019, Table 4) against our 15.80.
+- **Note:** a change to the prediction rule does not affect b2-zp, so it can be evaluated without invalidating the baselines.
+
+### D-035 · Week 3: Hann taper on the PPG spectrum
+- **Status:** open — expected effect: better masking, at the cost of every baseline number
+- **Decision:** none yet. See D-029: leakage from strong motion lines is wider than a notch can follow, and a taper would narrow it.
+- **Constraint:** tapering changes b2-zp itself, so it invalidates every baseline and ablation figure in the repository. It must not be touched before the ship, and when attempted it requires regenerating the whole results tree in one commit.
+
+### D-036 · Week 3: adaptive cancellation (4b) remains deferred
+- **Status:** open — carried over from D-031
+- **Note:** implemented and unit-tested in `src/models/adaptive.py`, wired into the ablation, never evaluated. The clipping comparison retracted in D-018 becomes meaningful when it runs.
+
+### D-037 · Week 3: a reset that detects sustained wrongness rather than jumps
+- **Status:** open — expected effect: shortens the long error episodes D-033 measures
+- **Decision:** none yet. This falls directly out of the persistence result: the current reset asks "did the estimate move?", when the failure is an estimate that does not move and is wrong.
+- **Candidate signals:** agreement between the tracked peak and the accelerometer harmonic family, the rank of the tracked peak in the current spectrum (D-032 shows the true peak is usually rank 2 or 3), or time since the last reset.
+- **Constraint:** any such signal faces the D-014 bar — within-activity AUROC against error, subject-bootstrapped CIs — before it gates anything.
+
+### D-038 · Week 3: split the README, keep the front page to result, figure, table, limitations
+- **Status:** open
+- **Decision:** none yet. Stage-by-stage detail moves to `docs/`, the README keeps the headline result, the motion-collision figure, the per-activity table and the limitations.
+- **Reason:** the README now carries the whole pipeline narrative and is long past the eight-minute reading path the project is optimised for.

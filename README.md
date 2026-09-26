@@ -6,7 +6,9 @@ Heart-rate estimation from wrist PPG during real-world movement on PPG-DaLiA, wi
 
 *Band-passed wrist-PPG spectrum over the estimator's own 8 s windows for S4, with the ECG ground-truth heart rate (solid), the naive spectral-peak estimate (crosses) and the dominant wrist-accelerometer frequency with its stride subharmonic (dashed, dotted). During stairs the estimate sits on an accelerometer line in 71% of windows and on the true heart rate in 11%, while at rest it tracks the heart rate in 88% — the estimator is following the motion, not the heart. S4 was selected by rule: its stairs MAE is the closest of the 15 subjects to the cohort median.*
 
-**Result.** Accelerometer-informed spectral masking plus peak tracking cuts heart-rate error on PPG-DaLiA from **18.98 to 15.80 bpm** MAE, leave-one-subject-out over 64,697 windows — matching the published SpaMa baseline (15.56) and short of SpaMaPlus (11.06). Masking removes the failure it targets: accelerometer lock falls from 23.3% of error windows to 13.1%, the chance rate. The method is much **worse** than the baseline on stairs and cycling, which the per-activity table below shows rather than hides.
+**Result.** Accelerometer-informed spectral masking plus peak tracking cuts heart-rate error on PPG-DaLiA from **18.98 to 15.80 bpm** MAE, leave-one-subject-out over all 64,697 windows — a paired gain of **+3.18 bpm [95% CI +1.00, +5.83]**, improving 11 of 15 subjects. That **replicates SpaMa (15.56)**, the published method this reimplements, and the spread across subjects is tighter than theirs (fold SD 6.04 against 7.5). It remains 4.7 bpm behind SpaMaPlus (11.06).
+
+The method is **worse than predicting a constant** on stairs and cycling, and it trades many short errors for a few very long ones. Both are documented below rather than buried in the pooled figure.
 
 **Status:** Stages 0–4 are done — validated data layer, label-aligned windowing, band-pass with signal quality, four LOSO baselines, and motion compensation by spectral masking and peak tracking. Adaptive cancellation (4b) is implemented and tested but not yet evaluated; see [docs/decisions.md](docs/decisions.md).
 
@@ -147,9 +149,15 @@ Two components, ablated separately, LOSO, every gain measured against b2-zp. Hyp
 
 Pooled over all 64,697 windows **including transients**, which is what the published evaluation covers. CIs are from bootstrapping subjects; gains are paired per subject.
 
-**The tracker alone is within per-subject variability.** Its mean gain is 1.45 bpm but the CI spans zero and only 9 of 15 subjects improve, with S13 losing 10.5 bpm. It is not reported as a result on its own. Combined with masking the gain is real (11 of 15 subjects improve), and the combination is worth more than the parts — masking alone is worth 0.36 bpm, but it makes the tracker's job possible by removing the motion lines the tracker would otherwise lock onto.
+**The tracker alone is not claimed.** Its mean gain is 1.45 bpm, but the CI spans zero and only 9 of 15 subjects improve, with S13 losing 10.5 bpm. It is reported as within per-subject variability, not as a result.
 
-**Against the published baselines:** +mask+tracker at 15.80 essentially matches SpaMa (15.56), the method 4a reimplements, and falls well short of SpaMaPlus (11.06). Per subject we beat SpaMa on 5 of 15 and SpaMaPlus on 0 of 15 (`results/stage4_per_subject.csv`, published values from their Table 10). The gap is the honest state of this implementation, not a tuning detail.
+**Against the published baselines.** SpaMa already contains a tracking step, so **mask+tracker against SpaMa is the like-for-like pairing, and 15.80 against 15.56 is a replication rather than a shortfall**. The remaining distance to SpaMaPlus (11.06) comes down to one named difference: SpaMaPlus predicts from a mean over the last six estimates and tracks against that, where this tracker's prediction is dominated by the most recent estimate. That is a specific, testable change, logged as the first Week 3 item, not a mystery.
+
+**The spread across subjects is tighter at matched mean error.** Fold SD falls 9.40 → 6.04 against SpaMa's published 7.5, and the worst fold falls 45.87 → 28.74. The method helps the worst subjects most — S5 gains 17.1 bpm and S6 8.2 — which is the property that matters for a wearable, where a device that is usually good and occasionally catastrophic is worse than one that is uniformly adequate. Per subject we beat SpaMa on 5 of 15 and SpaMaPlus on 0 of 15 (`results/stage4_per_subject.csv`; published values from their Table 10).
+
+**The components are superadditive.** Alone they are worth 1.45 and 0.36 bpm; together 3.18. Masking clears the competing motion line, tracking selects the survivor, and neither does much on its own — masking leaves the wrong peak still selectable, and tracking without masking follows a motion line as happily as a cardiac one.
+
+**Hyperparameter selection is in-fold and costs real accuracy.** Choosing the configuration on training subjects rather than all 15 costs 2.51 bpm for the tracker and 1.40 for the combination, and only 7/15 and 9/15 folds pick the globally best setting (`results/stage4_selected_configs.csv`). The globally chosen figures are never reported. The published comparison selects its parameters the same way, per held-out session, so the comparison stays like-for-like.
 
 ### Where it gets worse
 
@@ -164,7 +172,9 @@ Pooled over all 64,697 windows **including transients**, which is what the publi
 | cycling | **29.75** | 42.91 | 27.38 | 36.96 |
 | stairs | **38.17** | 52.55 | 37.37 | 56.01 |
 
-**The full method is much worse than the baseline on stairs (+17.8 bpm) and cycling (+7.2 bpm).** Tracking assumes the previous estimate is informative; during sustained vigorous motion the spectrum offers a stable *wrong* peak, and the tracker holds onto it instead of jumping around. On the quiet activities it is transformative — lunch halves, working nearly halves — and the pooled figure hides both facts. This is why the per-activity table exists.
+![Per-activity MAE for b2-zp and mask+tracker with the b0 constant baseline drawn across each activity](figures/per_activity_mae.png)
+
+**On stairs and cycling the full method is worse than predicting a constant.** Not merely worse than b2-zp: stairs **56.01 against the b0 constant's 30.95**, cycling **36.96 against 33.74**. A method that loses to "always guess the mean heart rate" on two of eight activities has not solved those activities, and the grey line in the figure above makes that visible at a glance. Tracking assumes the previous estimate is informative; during sustained vigorous motion the spectrum offers a stable *wrong* peak and the tracker holds it. On the quiet activities the same mechanism is transformative — lunch 14.26 → 6.64, working 8.62 → 4.92.
 
 ### Does masking remove what it targets?
 
@@ -174,13 +184,54 @@ But total error windows fall only 2.4% (17,485 → 17,074): the errors are recla
 
 Mean masked energy for the selected configurations is **7.7%** of in-band power, well under the 30% flag.
 
+### Does the cardiac peak survive masking?
+
+Yes — the information is there and the problem is selection. For masked windows still in error, the masked spectrum contains a peak within 3 bpm of the true heart rate **58.8% of the time, against a 36.3% chance rate** built the same way as the accelerometer-lock null: +22.5 points of real excess (`results/surviving_peak.csv`). The excess is largest exactly where the method fails — **cycling 78.1% against 34.1% chance, stairs 65.6% against 36.8%**.
+
+That peak is essentially never the largest one (rank 1: 0.0%, by construction — if it were, the window would not be in error), but it is **rank 2 in 34.9% of cases and rank 3 in 24.2%**. Roughly three in five surviving peaks are in the top three. So a better selection rule has somewhere to go, and this is a selection problem rather than a destroyed-signal problem. The worst window in the cohort makes it concrete:
+
+![Best and worst windows of the full method: BVP trace and masked spectrum](figures/best_worst_windows.png)
+
+The bottom row is S5 cycling at a true 173 bpm. The cardiac peak is plainly present in the masked spectrum, and the tracker returned 30 bpm.
+
+### How long does an error last?
+
+Mean error is not the whole story for a wearable. Measuring runs of consecutive windows with error over 10 bpm (`results/error_persistence.csv`):
+
+| | Runs | Median | p90 | Longest | Share of error windows in runs > 30 s |
+|---|---|---|---|---|---|
+| b2-zp | 3,574 | 3 | 10 | 99 | 27.6% |
+| mask+tracker | 2,876 | 1 | 6 | **409** | **61.8%** |
+
+![Run-length distribution of error episodes by activity, b2-zp vs mask+tracker](figures/error_persistence.png)
+
+**The method reduces mean error while making individual errors last far longer, and for a wearable that is the more dangerous failure.** It removes many short errors — the median run drops from 3 windows to 1 — but almost two thirds of remaining error time now sits in episodes longer than 30 seconds, against a quarter before. On stairs the p90 run length goes from 20 windows to **210** (7 minutes), and the longest single error episode in the cohort runs to 409 windows, about 13 minutes.
+
+The cause is visible in the reset counts: the reset fires **0.3 times per 1,000 windows on stairs and 1.4 on cycling**, and never at all on most activities. It triggers on jumps, and a smoothly tracked wrong estimate never jumps. A reset that detects sustained wrongness rather than sudden movement is the obvious next step, and is logged as a Week 3 item.
+
+## Agreement, strata and error structure (Stage 5)
+
+**Agreement with the ECG reference** (`results/agreement.csv`), non-transient windows: pooled Pearson r is 0.399 for b2-zp and 0.402 for mask+tracker, with Bland–Altman bias improving from −14.74 to −11.66 bpm and limits of agreement from [−66.3, +36.9] to [−58.8, +35.4]. The pooled correlation barely moves because between-activity spread dominates it; per activity the change is large — driving r 0.368 → 0.699, lunch 0.283 → 0.779, working 0.336 → 0.725, while stairs falls 0.196 → 0.130. The bias is negative everywhere: this estimator systematically *under*-reads, which follows from motion lines sitting below the cardiac rate.
+
+![Bland–Altman plot of mask+tracker against the ECG reference](figures/bland_altman.png)
+
+**Fitzpatrick skin type** (`results/skin_type.csv`). The cohort has one type-2 subject, eleven type-3 and three type-4, **so this establishes almost nothing statistically** and is reported per subject rather than as a stratum mean that would imply precision it does not have. It is here because almost no published work on this dataset reports it at all.
+
+| Type | Subjects | b2-zp | mask+tracker |
+|---|---|---|---|
+| 2 | S15 | 14.38 | 13.86 |
+| 3 | S1, S2, S3, S5, S6, S7, S8, S11, S12, S13, S14 (n=11) | 8.75–45.87 (mean 18.94) | 10.40–28.74 (mean 15.98) |
+| 4 | S4, S9, S10 (n=3) | 14.51–26.05 (mean 20.64) | 7.50–24.25 (mean 15.77) |
+
+Within-stratum spread dwarfs any difference between strata: the type-3 subjects alone span 8.75 to 45.87 bpm. There are **no type V or VI subjects at all**, so nothing here speaks to the melanin confound that matters most in optical heart rate.
+
 ## Reproduce
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 # obtain PPG-DaLiA first: see data/README.md
-pytest                              # 78 tests; 13 need the dataset and skip without it
+pytest                              # 101 tests; 13 need the dataset and skip without it
 python -m src.data.plot_rest_bvp    # figures/s1_rest_bvp.png and the DC numbers above
 python -m src.features.report_sqi   # results/02_sqi_by_activity.csv
 python -m src.eval.report_baselines # results/baselines_*.csv, clipping table, stop-condition checks
@@ -192,22 +243,26 @@ python -m src.eval.permutation_null # results/acc_lock_permutation.csv
 python -m src.eval.error_taxonomy   # results/error_taxonomy.csv
 python -m src.eval.stage4           # the ablation (~4 min)
 python -m src.eval.masked_taxonomy  # mechanistic check on masking
+python -m src.eval.diagnostics      # surviving-peak and error-persistence diagnostics
+python -m src.eval.stage5           # skin strata, agreement, and the Stage 5 figures
 ```
 
 The first real-data run unpickles all 15 subjects (~23 GB) and builds a 3.5 GB cache in about 40 s; later runs take about 3 s.
 
 ## Limitations and failure cases
 
-_Per-activity failures and the gap to published benchmarks are written once evaluation exists._ Known from the data layer:
-
-- **Skin types 2–4 only.** There are no type V or VI subjects, so nothing here speaks to the melanin confound in optical HR.
+- **Worse than a constant on two activities.** On stairs (56.01 vs b0's 30.95) and cycling (36.96 vs 33.74) the full method loses to predicting the mean heart rate.
+- **Errors last longer.** Mean error falls while individual error episodes lengthen: 61.8% of error time sits in runs over 30 s, against 27.6% for the baseline, with a worst episode of about 13 minutes. For continuous monitoring this trade may not be worth making.
+- **Skin types 2–4 only**, with one type-2 and three type-4 subjects. There are no type V or VI subjects, so nothing here speaks to the melanin confound in optical heart rate, and the stratified table settles nothing.
 - **BVP is manufacturer-processed**, not raw photodiode output, and perfusion index is unavailable.
-- **S6 is truncated** (5,250 s, activities 1–5 only), so folds are not equivalent.
+- **No window function.** The spectra are untapered so that the ablation isolates masking; leakage from strong motion lines is therefore wider than it needs to be, and a Hann taper is an untested improvement that would invalidate every baseline number here if added.
+- **Transients are 27% of pooled windows**, and activity durations are imbalanced — lunch is 13,554 windows against 2,310 for table soccer — so pooled figures are dominated by the quiet activities.
+- **S6 is truncated** (5,250 s, activities 1–5 only) and lacks lunch, walking and working, so the folds are not equivalent.
 - **The accelerometer clips at ±2 g**, most during cycling and table soccer. Motion references are least reliable exactly where they are most needed.
-- **Band-edge roll-off.** Zero-phase filtering halves the amplitude at 240 bpm. It is immaterial on PPG-DaLiA (0.06% of labels above 180 bpm) but would matter on a higher-intensity cohort.
-- **Absolute error flatters low-heart-rate subjects.** MAE in bpm is reported with MAPE beside it throughout, because the same locked window costs ~40 bpm for a resting subject and ~130 for S5.
-- **The SQI does not work under motion.** It predicts error well at rest (AUROC 0.895) and not at all during stairs, cycling or walking, and is anti-predictive during table soccer. Stage 4 cannot rely on it for reset decisions.
-- Activity durations are imbalanced, and this is a single dataset from a single device.
+- **Band-edge roll-off.** Zero-phase filtering halves the amplitude at 240 bpm. It is immaterial here (0.06% of labels above 180 bpm) but would matter on a higher-intensity cohort.
+- **Absolute error flatters low-heart-rate subjects.** MAE is reported with MAPE throughout, because the same locked window costs ~40 bpm for a resting subject and ~130 for S5.
+- **The SQI does not work under motion**, so it is not used for reset decisions (D-016).
+- **One dataset, one device, 15 subjects.** Nothing here supports a claim about generalisation to other wrist optics, other populations, or free-living use beyond this protocol.
 
 ## References
 
