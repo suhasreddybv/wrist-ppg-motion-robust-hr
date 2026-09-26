@@ -318,7 +318,7 @@ Every number here is copied from a committed results file, test or script output
 
 ### D-039 · The search bound, derived inside each fold
 - **Date / commit:** 2026-09-26 · `52e65b1` (implements D-024)
-- **Status:** adopted, as a separately ablated component and with a disclosure
+- **Status:** superseded by D-044 — kept as an ablation row, no longer described as a component
 - **Decision:** selection is restricted to frequencies at or above a bound computed **inside each fold** as `min(training-subject labels) − margin`, with the margin chosen on training subjects from {0, 5, 10} bpm. The rule lives in `fold_bound()`. b2-zp is left untouched as the reference.
 - **Measured:** every fold chose a zero margin, giving 41.7 bpm for fourteen folds and 41.9 for the fold holding out the subject who carries the cohort minimum — so the held-out subject genuinely never contributes to its own bound. It alters **5,555 of 64,697 windows (8.6%)**, between 136 (S7) and 779 (S5) per subject (`results/week3_bound_effect.csv`). Alone it is worth +2.04 bpm [+1.57, +2.63] and **improves all 15 subjects**, the only component here that does.
 - **Disclosure:** SpaMa and SpaMaPlus search the full band, so this is a departure from the published protocol. The repository reports **15.80 bpm without the bound** whenever comparing to published numbers and 12.50 with it.
@@ -353,3 +353,20 @@ Every number here is copied from a committed results file, test or script output
 - **Decision:** the selection headroom identified in D-032 is recorded as still open after Week 3.
 - **Evidence:** among the errors the Week 3 method leaves behind, a peak within 3 bpm of the true HR survives in **60.4%** of windows, against 58.8% for the masked baseline (`results/week3_surviving_peak.csv`). MAE improved by 6.48 bpm, but what remains is the same failure in the same proportion.
 - **Reading:** the bound and the reset removed error *episodes* without changing the character of the residual error. A better selection rule — not a better filter — is still the open direction.
+
+### D-044 · The bound is a cohort-specific ceiling, not a component
+- **Date / commit:** 2026-09-26 · `pending`
+- **Status:** adopted (supersedes D-039's framing)
+- **Decision:** the headline figure is the **without-bound 15.80 bpm**. The 12.50 figure is reported as conditional on a bound that only works at this cohort's own heart-rate floor.
+- **Evidence** (`results/bound_sensitivity.csv`): the gain of the bound alone against the margin below the training minimum — 0 bpm: +2.04 (100%); 5 bpm: +0.99 (49%); 10 bpm: +0.22 (11%); 15 bpm: +0.01 (1%); 20 and 30 bpm: zero, with no windows altered at all. The criterion set in advance was whether most of the gain survives a 30 bpm margin. It does not survive 15.
+- **Why this was not visible before:** every fold selecting a zero margin looked like agreement between folds. It was the grid saturating at its tightest edge, which is where in-sample gain is maximised by construction. The bound then sits at the training *sample's* minimum, a biased estimate of any population minimum.
+- **Consequence:** a bound loose enough for a bradycardic, athletic or beta-blocked subject — where 35–40 bpm resting rates are ordinary — is worth nothing. The component does not transfer, and the repository says so at the top rather than in a caveat.
+- **Rejected:** leading with 12.50. It is the better number and the less honest one.
+
+### D-045 · The reset is worthless without the bound
+- **Date / commit:** 2026-09-26 · `pending`
+- **Status:** adopted (finding)
+- **Decision:** the without-bound best configuration is mask+tracker at 15.80 bpm; the reset is not part of it.
+- **Evidence** (`results/without_bound_best.csv`): with a bound the reset is worth +0.47 bpm (12.97 → 12.50); without one the best reset configuration scores **15.86 against 15.80**, marginally worse. The same rule was selected by 15/15 folds in both settings.
+- **Mechanism:** the reset re-seeds onto the unconstrained argmax. Without a bound that argmax is frequently the low-frequency lock the track had just escaped, so re-seeding returns to the failure it was meant to leave.
+- **Consequence:** the two Week 3 components are not independent, and reporting their gains additively would be wrong. It also explains why the Week 2 tracker gained so little: re-seeding into an unbounded spectrum is close to a no-op.

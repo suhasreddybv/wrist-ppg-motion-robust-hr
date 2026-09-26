@@ -6,9 +6,9 @@ Heart-rate estimation from wrist PPG during real-world movement on PPG-DaLiA, wi
 
 *Band-passed wrist-PPG spectrum over the estimator's own 8 s windows for S4, with the ECG ground-truth heart rate (solid), the naive spectral-peak estimate (crosses) and the dominant wrist-accelerometer frequency with its stride subharmonic (dashed, dotted). During stairs the estimate sits on an accelerometer line in 71% of windows and on the true heart rate in 11%, while at rest it tracks the heart rate in 88% — the estimator is following the motion, not the heart. S4 was selected by rule: its stairs MAE is the closest of the 15 subjects to the cohort median.*
 
-**Result.** Accelerometer-informed spectral masking, peak tracking, a fold-derived search bound and a sustained-wrongness reset cut heart-rate error on PPG-DaLiA from **18.98 to 12.50 bpm** MAE, leave-one-subject-out over all 64,697 windows — a paired gain of **+6.48 bpm [95% CI +3.96, +9.47]**, improving **14 of 15 subjects**.
+**Result.** Accelerometer-informed spectral masking plus peak tracking cuts heart-rate error on PPG-DaLiA from **18.98 to 15.80 bpm** MAE, leave-one-subject-out over all 64,697 windows — a paired gain of **+3.18 bpm [95% CI +1.00, +5.92]**, improving 11 of 15 subjects. That **replicates SpaMa (15.56)**, the published method this reimplements, with a tighter spread across subjects (fold SD 6.04 against their 7.5). SpaMaPlus reaches 11.06.
 
-**For comparison with published work the figure is 15.80 bpm**, which is the same method without the search bound, because SpaMa and SpaMaPlus search the full band. That replicates SpaMa (15.56); SpaMaPlus reaches 11.06.
+Adding a lower search bound takes it to **12.50 bpm**, but **that number does not travel**: the bound only pays while it sits within a few bpm of the cohort's own minimum heart rate, and its benefit is gone entirely 15 bpm below that. It is reported as a **cohort-specific ceiling, not a component** — see the sensitivity curve below. Every comparison with published work uses the 15.80 figure.
 
 **Bland–Altman is the number a clinical reader should weigh.** Limits of agreement span **−58.8 to +35.4 bpm**, a 94 bpm window, and the bias is negative on every activity: this estimator **systematically under-reads**, which is exactly what subharmonic and low-frequency lock predict. A 12.50 bpm MAE does not make it a measurement device.
 
@@ -217,9 +217,23 @@ The cause is visible in the reset counts: the reset fires **0.3 times per 1,000 
 
 Two components, both aimed at the lock-in rather than at pooled MAE.
 
-**A fold-derived lower bound.** Estimates below ~40 bpm are always wrong in this cohort while the lowest ECG label is 41.7 bpm, so the search space is restricted. The bound is **derived inside each fold** as the minimum training label less a margin chosen on training subjects — never the global minimum, never a hand-picked constant. Every fold selected a zero margin, giving 41.7 bpm for fourteen folds and 41.9 for the fold that holds out the subject carrying the cohort minimum. It changes **5,555 of 64,697 windows (8.6%)**, from 136 windows for S7 to 779 for S5, so the gain is not a handful of windows (`results/week3_bound_effect.csv`).
+**A fold-derived lower bound.** Estimates below ~40 bpm are always wrong in this cohort while the lowest ECG label is 41.7 bpm, so the search space is restricted. The bound is **derived inside each fold** as the minimum training label less a margin chosen on training subjects — never the global minimum, never a hand-picked constant. Every fold selected a zero margin, giving 41.7 bpm for fourteen folds and 41.9 for the fold that holds out the subject carrying the cohort minimum. It changes **5,555 of 64,697 windows (8.6%)**, from 136 windows for S7 to 779 for S5 (`results/week3_bound_effect.csv`).
+
+**But the bound does not generalise, and the sensitivity curve says so** (`results/bound_sensitivity.csv`). Every fold picking a zero margin means the grid saturated at its tightest edge — the setting that maximises in-sample gain — and the bound then sits at the *training sample's* minimum, a biased estimate of any population minimum:
+
+| Margin below the training minimum | Bound | Gain of the bound alone | Share of the margin-0 gain |
+|---|---|---|---|
+| 0 bpm | 41.7 | +2.04 | 100% |
+| 5 bpm | 36.7 | +0.99 | 49% |
+| 10 bpm | 31.7 | +0.22 | 11% |
+| 15 bpm | 26.7 | +0.01 | 1% |
+| 20–30 bpm | ≤21.7 | +0.00 | 0% |
+
+**Half the gain is gone 5 bpm down, and all of it 15 bpm down.** A bound loose enough to be safe for a bradycardic, athletic or beta-blocked subject — where resting rates of 35–40 bpm are ordinary — is worth nothing. This is a property of this cohort's heart-rate floor, not a signal-processing component, and it is the reason the headline figure excludes it.
 
 **A sustained-wrongness reset.** The jump reset cannot see a smoothly tracked wrong estimate. Two formulations were tried: a hard rank test (the tracked peak must stay within the top-N peaks) and a continuous height-ratio test. **The ratio test won on every fold** — the tracked peak must keep at least 30% of the spectral maximum's height for five consecutive windows — and it beat the best rank formulation by 1.3 bpm pooled (12.50 against 13.82). Both are in `results/week3_ablation.csv`.
+
+**The reset does nothing without the bound.** With the bound it is worth +0.47 bpm (12.97 → 12.50); without one, the best reset configuration scores **15.86 against 15.80 — very slightly worse** (`results/without_bound_best.csv`). Re-seeding only helps when the unconstrained argmax it re-seeds onto is itself constrained to a sane region; without a bound the reset frequently lands back on the low-frequency lock it just escaped. The two components are not independent, and the 15.80 figure is therefore the best available without a bound.
 
 | Method | Pooled MAE | MAPE | Paired gain [95% CI] | Improved |
 |---|---|---|---|---|
