@@ -355,7 +355,7 @@ Every number here is copied from a committed results file, test or script output
 - **Reading:** the bound and the reset removed error *episodes* without changing the character of the residual error. A better selection rule — not a better filter — is still the open direction.
 
 ### D-044 · The bound is a cohort-specific ceiling, not a component
-- **Date / commit:** 2026-09-26 · `pending`
+- **Date / commit:** 2026-09-26 · `539def2`
 - **Status:** adopted (supersedes D-039's framing)
 - **Decision:** the headline figure is the **without-bound 15.80 bpm**. The 12.50 figure is reported as conditional on a bound that only works at this cohort's own heart-rate floor.
 - **Evidence** (`results/bound_sensitivity.csv`): the gain of the bound alone against the margin below the training minimum — 0 bpm: +2.04 (100%); 5 bpm: +0.99 (49%); 10 bpm: +0.22 (11%); 15 bpm: +0.01 (1%); 20 and 30 bpm: zero, with no windows altered at all. The criterion set in advance was whether most of the gain survives a 30 bpm margin. It does not survive 15.
@@ -364,7 +364,7 @@ Every number here is copied from a committed results file, test or script output
 - **Rejected:** leading with 12.50. It is the better number and the less honest one.
 
 ### D-045 · The reset is worthless without the bound
-- **Date / commit:** 2026-09-26 · `pending`
+- **Date / commit:** 2026-09-26 · `539def2`
 - **Status:** adopted (finding)
 - **Decision:** the without-bound best configuration is mask+tracker at 15.80 bpm; the reset is not part of it.
 - **Evidence** (`results/without_bound_best.csv`): with a bound the reset is worth +0.47 bpm (12.97 → 12.50); without one the best reset configuration scores **15.86 against 15.80**, marginally worse. The same rule was selected by 15/15 folds in both settings.
