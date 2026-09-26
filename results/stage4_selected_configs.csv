@@ -1,0 +1,4 @@
+method,n_distinct_configs,global_best,folds_agreeing_with_global,mae_config_chosen_in_fold,mae_config_chosen_globally,optimism
++tracker,4,"nearest_peak,prom=0.05,hist=6,jump=25.0,reset=3",7,17.528,15.022,2.506
++mask,1,"K=1,prom=0.1,width=0.5,depth=0.2,gate=0.02",15,18.615,18.615,0.0
++mask+tracker,3,"K=1,prom=0.1,width=2.0,depth=0.2,gate=0.02|nearest_peak,prom=0.05,hist=6,jump=25.0,reset=3",9,15.799,14.4,1.399
