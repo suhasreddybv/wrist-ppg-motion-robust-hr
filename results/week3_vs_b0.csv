@@ -1,0 +1,9 @@
+activity,b0,b2_zp,mask_tracker,week3_best,beats_b0,mask_tracker_beat_b0
+sitting,29.276,2.817,2.635,2.44,True,True
+stairs,30.948,38.167,56.006,35.844,False,False
+table soccer,14.019,33.271,26.735,21.693,False,False
+cycling,33.739,29.747,36.958,21.63,True,False
+driving,14.111,13.424,7.501,7.608,True,True
+lunch,13.702,14.259,6.637,7.413,True,True
+walking,15.457,29.606,25.178,22.045,False,False
+working,17.025,8.622,4.922,4.67,True,True

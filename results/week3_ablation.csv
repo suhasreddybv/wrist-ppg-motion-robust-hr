@@ -1,0 +1,71 @@
+method,activity,n_folds,n_windows,mae,mae_sd_across_folds,mae_worst_fold,mape,rmse
+b2-zp,sitting,15,4569,2.817,1.93,7.528,4.512,6.396
+b2-zp,stairs,15,3239,38.167,17.358,70.03,31.627,48.069
+b2-zp,table soccer,15,2310,33.271,18.402,79.581,34.854,38.695
+b2-zp,cycling,15,3473,29.747,23.865,93.521,23.401,42.825
+b2-zp,driving,15,6843,13.424,10.525,47.487,15.27,20.99
+b2-zp,lunch,14,13554,14.259,8.287,35.295,16.426,22.014
+b2-zp,walking,14,4697,29.606,15.952,59.064,28.568,36.497
+b2-zp,working,14,8497,8.622,7.091,28.734,10.321,15.673
+b2-zp,POOLED (incl. transient),15,64697,18.976,9.404,45.874,19.162,29.726
+b2-zp,POOLED (excl. transient),15,47182,17.348,8.632,42.299,17.592,28.654
++bound,sitting,15,4569,2.34,1.421,5.688,3.801,5.139
++bound,stairs,15,3239,36.869,17.258,68.914,30.442,46.604
++bound,table soccer,15,2310,28.421,17.388,73.995,29.516,33.285
++bound,cycling,15,3473,27.654,23.109,88.946,21.713,39.778
++bound,driving,15,6843,11.259,8.616,38.726,12.808,17.836
++bound,lunch,14,13554,11.823,6.867,29.788,13.568,18.547
++bound,walking,14,4697,28.057,15.557,56.989,27.034,34.519
++bound,working,14,8497,7.125,5.681,22.571,8.559,13.04
++bound,POOLED (incl. transient),15,64697,16.938,8.486,40.719,16.974,27.022
++bound,POOLED (excl. transient),15,47182,15.363,7.749,37.32,15.41,26.007
++tracker,sitting,15,4569,2.65,1.431,6.146,4.291,5.177
++tracker,stairs,15,3239,52.545,19.932,90.937,44.351,57.054
++tracker,table soccer,15,2310,29.077,23.142,89.152,29.785,31.288
++tracker,cycling,15,3473,42.906,30.995,122.076,33.505,50.175
++tracker,driving,15,6843,7.729,4.592,16.112,9.301,11.656
++tracker,lunch,14,13554,9.21,4.932,17.779,11.061,14.118
++tracker,walking,14,4697,31.44,17.546,51.119,30.427,34.869
++tracker,working,14,8497,5.623,3.27,11.927,6.82,9.969
++tracker,POOLED (incl. transient),15,64697,17.528,6.825,34.124,17.487,28.031
++tracker,POOLED (excl. transient),15,47182,15.979,5.971,30.369,15.788,27.214
++mask,sitting,15,4569,2.814,1.962,7.642,4.543,6.293
++mask,stairs,15,3239,37.371,16.257,68.697,31.174,47.784
++mask,table soccer,15,2310,33.259,18.404,80.707,34.85,38.689
++mask,cycling,15,3473,27.379,21.691,83.448,21.777,40.843
++mask,driving,15,6843,13.564,10.229,46.727,15.461,21.255
++mask,lunch,14,13554,14.252,8.227,35.384,16.427,22.077
++mask,walking,14,4697,28.976,17.336,61.448,27.718,36.851
++mask,working,14,8497,8.734,7.265,29.692,10.443,15.876
++mask,POOLED (incl. transient),15,64697,18.615,9.235,45.333,18.862,29.598
++mask,POOLED (excl. transient),15,47182,17.068,8.462,41.634,17.385,28.478
++mask+tracker,sitting,15,4569,2.635,1.568,6.889,4.265,5.089
++mask+tracker,stairs,15,3239,56.006,22.52,99.209,45.872,59.256
++mask+tracker,table soccer,15,2310,26.735,21.424,78.69,27.725,29.115
++mask+tracker,cycling,15,3473,36.958,28.611,94.321,29.879,42.067
++mask+tracker,driving,15,6843,7.501,5.437,21.392,8.917,10.605
++mask+tracker,lunch,14,13554,6.637,2.437,10.13,8.098,10.066
++mask+tracker,walking,14,4697,25.178,18.563,57.321,23.714,28.605
++mask+tracker,working,14,8497,4.922,2.726,11.605,6.014,8.356
++mask+tracker,POOLED (incl. transient),15,64697,15.799,6.038,28.74,15.625,26.103
++mask+tracker,POOLED (excl. transient),15,47182,14.776,5.647,24.55,14.274,25.929
++mask+tracker+bound,sitting,15,4569,2.653,1.351,5.333,4.428,5.042
++mask+tracker+bound,stairs,15,3239,48.198,19.801,88.907,39.215,51.823
++mask+tracker+bound,table soccer,15,2310,16.564,13.063,50.32,17.51,19.238
++mask+tracker+bound,cycling,15,3473,29.079,24.003,83.28,22.731,34.921
++mask+tracker+bound,driving,15,6843,7.132,4.641,18.793,8.52,9.97
++mask+tracker+bound,lunch,14,13554,6.128,1.941,8.314,7.502,8.979
++mask+tracker+bound,walking,14,4697,22.793,16.045,49.392,21.322,26.078
++mask+tracker+bound,working,14,8497,4.834,2.608,11.148,5.922,8.161
++mask+tracker+bound,POOLED (incl. transient),15,64697,12.974,4.939,24.21,12.808,21.698
++mask+tracker+bound,POOLED (excl. transient),15,47182,12.414,4.258,20.462,12.079,22.041
++mask+tracker+bound+rankreset,sitting,15,4569,2.44,1.145,5.333,4.009,4.691
++mask+tracker+bound+rankreset,stairs,15,3239,35.844,16.019,73.535,30.579,42.705
++mask+tracker+bound+rankreset,table soccer,15,2310,21.693,17.135,69.981,22.16,24.801
++mask+tracker+bound+rankreset,cycling,15,3473,21.63,22.39,70.646,17.313,28.56
++mask+tracker+bound+rankreset,driving,15,6843,7.608,4.646,17.121,9.017,11.277
++mask+tracker+bound+rankreset,lunch,14,13554,7.413,3.049,13.84,8.745,11.426
++mask+tracker+bound+rankreset,walking,14,4697,22.045,17.872,52.819,20.663,26.087
++mask+tracker+bound+rankreset,working,14,8497,4.67,2.363,9.895,5.763,8.047
++mask+tracker+bound+rankreset,POOLED (incl. transient),15,64697,12.498,4.658,23.88,12.673,21.112
++mask+tracker+bound+rankreset,POOLED (excl. transient),15,47182,11.421,4.327,22.929,11.512,20.539

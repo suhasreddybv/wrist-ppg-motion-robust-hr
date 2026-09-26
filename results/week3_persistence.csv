@@ -1,0 +1,28 @@
+activity,method,n_runs,n_error_windows,median_run,p90_run,longest_run,share_in_runs_over_30s
+sitting,b2-zp,118,332,2.0,5.299999999999997,26,0.0783
+sitting,mask+tracker,162,362,1.0,4.0,19,0.1436
+sitting,week3 best,165,321,1.0,3.0,17,0.053
+stairs,b2-zp,264,2175,4.5,20.0,76,0.5103
+stairs,mask+tracker,51,3016,5.0,210.0,242,0.9678
+stairs,week3 best,122,2393,2.0,79.40000000000003,228,0.8922
+table soccer,b2-zp,226,1732,4.0,17.5,99,0.4821
+table soccer,mask+tracker,163,1625,2.0,30.600000000000193,155,0.7532
+table soccer,week3 best,207,1467,2.0,12.400000000000006,137,0.608
+cycling,b2-zp,222,1518,4.0,13.0,87,0.3801
+cycling,mask+tracker,125,2307,2.0,48.20000000000002,277,0.8951
+cycling,week3 best,155,1392,2.0,11.599999999999994,178,0.7522
+driving,b2-zp,575,2201,3.0,8.0,29,0.0909
+driving,mask+tracker,523,1743,1.0,6.0,118,0.3356
+driving,week3 best,525,1741,1.0,6.0,73,0.3056
+lunch,b2-zp,1255,4779,3.0,8.0,40,0.108
+lunch,mask+tracker,1168,3220,1.0,5.0,76,0.1984
+lunch,week3 best,1102,3407,2.0,5.0,73,0.2832
+walking,b2-zp,401,2951,4.0,17.0,67,0.4754
+walking,mask+tracker,161,2795,2.0,18.0,369,0.8565
+walking,week3 best,186,2446,2.0,18.5,307,0.8193
+working,b2-zp,519,1797,3.0,7.0,22,0.0634
+working,mask+tracker,528,1373,1.0,4.0,59,0.2083
+working,week3 best,510,1277,1.0,5.0,31,0.1668
+ALL (excl. transient),b2-zp,3574,17485,3.0,10.0,99,0.2763
+ALL (excl. transient),mask+tracker,2876,16441,1.0,6.0,409,0.6182
+ALL (excl. transient),week3 best,2965,14444,2.0,7.0,323,0.5411

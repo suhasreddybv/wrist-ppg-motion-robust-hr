@@ -1,0 +1,10 @@
+activity,resets_per_1000_windows,n_windows,degenerate
+sitting,1.53,4569,False
+stairs,9.57,3239,False
+table soccer,6.06,2310,False
+cycling,8.35,3473,False
+driving,3.8,6843,False
+lunch,4.43,13554,False
+walking,7.45,4697,False
+working,2.59,8497,False
+ALL (excl. transient),4.75,47182,False

@@ -182,3 +182,53 @@ def test_tracker_first_window_is_unconstrained():
     f = np.arange(24, 241, 1.0)
     out = track(_spectra_from([180, 180], f), f, TrackerConfig())
     assert abs(out[0] - 180) <= 1.0
+
+
+# --- Week 3: search bound and sustained-wrongness reset ----------------------
+
+def test_bound_removes_the_low_region_from_selection():
+    f = np.arange(24, 241, 1.0)
+    spec = _spectra_from([30.0], f)                  # the only peak is below the bound
+    assert track(spec, f, TrackerConfig()) == pytest.approx(30.0, abs=1.0)
+    bounded = track(spec, f, TrackerConfig(), bound_bpm=42.0)
+    assert bounded[0] >= 42.0
+
+
+def test_bound_with_no_surviving_candidates_still_returns_an_estimate():
+    f = np.arange(24, 241, 1.0)
+    spec = _spectra_from([30.0, 31.0, 30.5], f)
+    out = track(spec, f, TrackerConfig(mode="nearest_peak"), bound_bpm=42.0)
+    assert np.all(out >= 42.0) and np.all(np.isfinite(out))
+
+
+def test_rank_reset_fires_on_a_smoothly_tracked_wrong_estimate():
+    """The failure the jump test cannot see: the track stays put while the spectrum moves."""
+    f = np.arange(24, 241, 1.0)
+    # window 0 seeds at 80; afterwards the dominant peak is 150 and 80 is a minor peak
+    spec = np.stack([_spectra_from([80.0], f)[0]]
+                    + [_spectra_from([150.0], f)[0] + 0.25 * _spectra_from([80.0], f)[0]
+                       for _ in range(6)])
+    smooth = track(spec, f, TrackerConfig(jump_bpm=100, reset_after=99))
+    with_rank = track(spec, f, TrackerConfig(jump_bpm=100, reset_after=99,
+                                             sustained_rule="rank", rank_max=1, sustained_after=2))
+    assert abs(smooth[-1] - 80.0) <= 2.0          # jump test alone never lets go
+    assert abs(with_rank[-1] - 150.0) <= 2.0      # rank test re-seeds onto the real peak
+
+
+def test_ratio_reset_fires_on_a_collapsing_peak():
+    f = np.arange(24, 241, 1.0)
+    spec = np.stack([_spectra_from([80.0], f)[0]]
+                    + [_spectra_from([150.0], f)[0] + 0.1 * _spectra_from([80.0], f)[0]
+                       for _ in range(6)])
+    out = track(spec, f, TrackerConfig(jump_bpm=100, reset_after=99,
+                                       sustained_rule="ratio", ratio_min=0.5, sustained_after=2))
+    assert abs(out[-1] - 150.0) <= 2.0
+
+
+def test_sustained_reset_does_not_fire_on_a_healthy_track():
+    f = np.arange(24, 241, 1.0)
+    spec = _spectra_from([75, 76, 77, 76, 75], f)
+    out, resets = track(spec, f, TrackerConfig(sustained_rule="rank", rank_max=2, sustained_after=2),
+                        return_resets=True)
+    assert not resets.any()
+    np.testing.assert_allclose(out, [75, 76, 77, 76, 75], atol=1.0)

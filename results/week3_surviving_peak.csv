@@ -1,0 +1,10 @@
+activity,n_error_windows,survives
+sitting,321,0.6729
+stairs,2393,0.6435
+table soccer,1467,0.4799
+cycling,1392,0.7716
+driving,1741,0.5589
+lunch,3407,0.5785
+walking,2446,0.5859
+working,1277,0.6359
+ALL (excl. transient),14444,0.6039
