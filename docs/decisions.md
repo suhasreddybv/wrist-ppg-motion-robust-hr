@@ -291,7 +291,7 @@ Every number here is copied from a committed results file, test or script output
 - **Consequence:** for continuous monitoring a shorter mean error with longer episodes may be the worse product. The README states this rather than reporting the MAE gain alone.
 
 ### D-034 · Week 3: six-window mean prediction for the tracker
-- **Status:** open — expected effect: closes part of the 4.7 bpm gap to SpaMaPlus
+- **Status:** closed 2026-09-28 by D-046 — **the premise was wrong**; the mean filter already existed
 - **Decision:** none yet. SpaMaPlus predicts from a mean over the last six estimates; this tracker's mean filter is dominated by the most recent estimate in practice, and that is the one named difference between the two.
 - **Target:** SpaMaPlus 11.06 bpm pooled (Reiss et al. 2019, Table 4) against our 15.80.
 - **Note:** a change to the prediction rule does not affect b2-zp, so it can be evaluated without invalidating the baselines.
@@ -370,3 +370,21 @@ Every number here is copied from a committed results file, test or script output
 - **Evidence** (`results/without_bound_best.csv`): with a bound the reset is worth +0.47 bpm (12.97 → 12.50); without one the best reset configuration scores **15.86 against 15.80**, marginally worse. The same rule was selected by 15/15 folds in both settings.
 - **Mechanism:** the reset re-seeds onto the unconstrained argmax. Without a bound that argmax is frequently the low-frequency lock the track had just escaped, so re-seeding returns to the failure it was meant to leave.
 - **Consequence:** the two Week 3 components are not independent, and reporting their gains additively would be wrong. It also explains why the Week 2 tracker gained so little: re-seeding into an unbounded spectrum is close to a no-op.
+
+### D-046 · The prediction window, not the prediction rule
+- **Date / commit:** 2026-09-28 · `pending` (closes D-034)
+- **Status:** adopted
+- **Decision:** the tracker's prediction is a mean over a window whose length is selected in-fold. Fifteen windows is what every fold chooses without the bound.
+- **Correction first:** D-034 claimed the tracker predicted from "the last estimate alone" and that adding a six-window mean was the named gap to SpaMaPlus. **That was wrong and was written without reading the code.** `deque(maxlen=history)` with `history=6` has been in every grid configuration since the tracker was built. The mean filter was never missing; its length had simply never been swept.
+- **Evidence** (`results/prediction_rule.csv`, no bound, everything else at each fold's own configuration): 1 window 18.41, 3 windows 17.01, 6 windows 15.80, **15 windows 14.70**, 20 windows 15.18, 30 windows 15.66, 60 windows 15.92. Selected by 15/15 folds, and the optimum is **interior** — both neighbours are worse — so unlike the bound in D-044 this is not a grid edge.
+- **Scale:** +1.10 bpm, against +0.36 for masking and +3.18 for masking and tracking together. One configuration value is worth three times what the accelerometer-informed masking is worth.
+- **Median rejected:** worse than the mean at every length (17.05 against 15.80 at six windows). The prediction appears to benefit from being pulled by outliers: a genuine rate change moves the mean before it can win a majority.
+- **Interaction with the bound (D-044):** the 15-window mean is worth +1.10 without the bound and **−0.56 with it** (13.06 against 12.50). Once the bound removes the low-frequency traps a long memory mostly slows the response to real changes. The two must be chosen jointly; their gains do not stack.
+- **Reconciliation guard:** the sweep asserts that its 6-window cell reproduces the ablation's +mask+tracker figure to 0.01 bpm, so the two pipelines cannot drift apart unnoticed. An earlier run of the sweep reported 15.70 for that cell against the ablation's 15.80; the guard was added in response and the discrepancy did not survive it.
+
+### D-047 · Diagnostic A is still unconsumed after prediction tuning
+- **Date / commit:** 2026-09-28 · `pending`
+- **Status:** adopted (finding) — supersedes nothing; extends D-043
+- **Evidence:** the share of residual error windows containing a peak within 3 bpm of the true HR is 58.8% after masking, 60.4% after the bound and reset, and **65.7% after the 15-window prediction** (`results/prediction_rule.csv`).
+- **Reading:** three successive components have lowered error magnitude without touching the selection failure, and the residual errors increasingly *do* contain the right answer. This is the test D-032 proposed and it has now been run three times with the same result.
+- **Consequence:** greedy per-window selection is the binding constraint. A decoder that considers the whole sequence at once — Viterbi over candidate peaks, with emission from peak prominence and transition penalising implausible rate change — is the next thing to build, and it is the only remaining avenue the diagnostics point at.

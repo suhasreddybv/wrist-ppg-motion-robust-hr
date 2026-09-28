@@ -6,7 +6,7 @@ Heart-rate estimation from wrist PPG during real-world movement on PPG-DaLiA, wi
 
 *Band-passed wrist-PPG spectrum over the estimator's own 8 s windows for S4, with the ECG ground-truth heart rate (solid), the naive spectral-peak estimate (crosses) and the dominant wrist-accelerometer frequency with its stride subharmonic (dashed, dotted). During stairs the estimate sits on an accelerometer line in 71% of windows and on the true heart rate in 11%, while at rest it tracks the heart rate in 88% — the estimator is following the motion, not the heart. S4 was selected by rule: its stairs MAE is the closest of the 15 subjects to the cohort median.*
 
-**Result.** Accelerometer-informed spectral masking plus peak tracking cuts heart-rate error on PPG-DaLiA from **18.98 to 15.80 bpm** MAE, leave-one-subject-out over all 64,697 windows — a paired gain of **+3.18 bpm [95% CI +1.00, +5.92]**, improving 11 of 15 subjects. That **replicates SpaMa (15.56)**, the published method this reimplements, with a tighter spread across subjects (fold SD 6.04 against their 7.5). SpaMaPlus reaches 11.06.
+**Result.** Accelerometer-informed spectral masking plus peak tracking cuts heart-rate error on PPG-DaLiA from **18.98 to 14.70 bpm** MAE, leave-one-subject-out over all 64,697 windows. That **beats the published SpaMa baseline (15.56)** this reimplements, with a tighter spread across subjects (fold SD 6.04 against their 7.5); SpaMaPlus reaches 11.06. The last 1.10 bpm came from the tracker's prediction window, not from the signal processing — see below.
 
 Adding a lower search bound takes it to **12.50 bpm**, but **that number does not travel**: the bound only pays while it sits within a few bpm of the cohort's own minimum heart rate, and its benefit is gone entirely 15 bpm below that. It is reported as a **cohort-specific ceiling, not a component** — see the sensitivity curve below. Every comparison with published work uses the 15.80 figure.
 
@@ -231,6 +231,22 @@ Two components, both aimed at the lock-in rather than at pooled MAE.
 
 **Half the gain is gone 5 bpm down, and all of it 15 bpm down.** A bound loose enough to be safe for a bradycardic, athletic or beta-blocked subject — where resting rates of 35–40 bpm are ordinary — is worth nothing. This is a property of this cohort's heart-rate floor, not a signal-processing component, and it is the reason the headline figure excludes it.
 
+### The prediction window is worth more than masking
+
+SpaMaPlus predicts from a mean over recent estimates, and so does this tracker — it always has. The open question was not whether to add the mean filter but how long it should be, and that had never been swept (`results/prediction_rule.csv`, everything else held at each fold's own configuration, no bound):
+
+| Prediction rule | Pooled MAE |
+|---|---|
+| mean over 1 window (the last estimate alone) | 18.41 |
+| mean over 6 windows (the setting used all through Week 2) | 15.80 |
+| **mean over 15 windows** | **14.70** |
+| mean over 20 / 30 / 45 / 60 | 15.18 / 15.66 / 15.79 / 15.92 |
+| median, any length | worse at every length |
+
+All 15 folds selected the 15-window mean, and the optimum is interior — 10 and 20 windows are both worse — so this is a real optimum rather than a grid edge. **Lengthening the prediction window is worth +1.10 bpm, three times what masking is worth (+0.36)**, and it is one line of configuration. The median is worse than the mean everywhere, which suggests the prediction benefits from being dragged by outliers rather than protected from them: a genuine rate change shows up in the mean before it can win a majority.
+
+**It interacts with the bound.** The 15-window mean is worth +1.10 bpm without the bound but *costs* 0.56 with it (13.06 against 12.50 for the 6-window mean). Once the bound has removed the low-frequency traps, a long memory is mostly a brake on following real heart-rate changes. The two settings have to be chosen together, not stacked.
+
 **A sustained-wrongness reset.** The jump reset cannot see a smoothly tracked wrong estimate. Two formulations were tried: a hard rank test (the tracked peak must stay within the top-N peaks) and a continuous height-ratio test. **The ratio test won on every fold** — the tracked peak must keep at least 30% of the spectral maximum's height for five consecutive windows — and it beat the best rank formulation by 1.3 bpm pooled (12.50 against 13.82). Both are in `results/week3_ablation.csv`.
 
 **The reset does nothing without the bound.** With the bound it is worth +0.47 bpm (12.97 → 12.50); without one, the best reset configuration scores **15.86 against 15.80 — very slightly worse** (`results/without_bound_best.csv`). Re-seeding only helps when the unconstrained argmax it re-seeds onto is itself constrained to a sane region; without a bound the reset frequently lands back on the low-frequency lock it just escaped. The two components are not independent, and the 15.80 figure is therefore the best available without a bound.
@@ -276,7 +292,7 @@ Improved but not solved. On stairs the p90 run falls from **210 windows to 79** 
 
 **Reset rate** (`results/week3_reset_rates.csv`): 4.7 per 1,000 windows cohort-wide, peaking at 9.6 on stairs — roughly one window in 104, far below the one-in-five degeneracy threshold. The tracker has not collapsed into a no-op.
 
-**Diagnostic A on the new residual errors: unchanged.** A peak within 3 bpm of the true HR still survives in **60.4%** of remaining error windows, against 58.8% before. The selection rule improved, but what it leaves behind is the same kind of failure — the information is still there and still not being chosen. The headroom Diagnostic A identified has not been consumed.
+**Diagnostic A on the new residual errors: still unconsumed, and rising.** A peak within 3 bpm of the true HR survives in **60.4%** of the errors the bound and reset leave behind, against 58.8% before — and **65.7%** of those the 15-window prediction leaves behind. Every component so far has reduced error magnitude while leaving the selection failure intact, and the share of residual errors that contain the right answer keeps going up. Greedy per-window selection cannot use that information; a method that decodes the whole sequence at once can, which is what comes next.
 
 ## Agreement, strata and error structure (Stage 5)
 

@@ -40,10 +40,13 @@ class TrackerConfig:
     rank_max: int = 2              # "rank": tracked peak must be within the top rank_max peaks
     ratio_min: float = 0.3         # "ratio": tracked height / spectrum max must stay above this
     sustained_after: int = 3       # consecutive failing windows before re-seeding
+    pred_stat: str = "mean"        # how the recent estimates form the prediction: mean or median
 
     def label(self) -> str:
         span = f"+-{self.half_width_bpm}" if self.mode == "window" else f"prom={self.prominence}"
-        base = f"{self.mode},{span},hist={self.history},jump={self.jump_bpm},reset={self.reset_after}"
+        stat = "" if self.pred_stat == "mean" else f",{self.pred_stat}"
+        base = (f"{self.mode},{span},hist={self.history}{stat},"
+                f"jump={self.jump_bpm},reset={self.reset_after}")
         if self.sustained_rule == "none":
             return base
         arg = self.rank_max if self.sustained_rule == "rank" else self.ratio_min
@@ -93,7 +96,7 @@ def track(spectra: np.ndarray, freqs_bpm: np.ndarray, cfg: TrackerConfig,
             recent.append(unconstrained)
             continue
 
-        prediction = float(np.mean(recent))
+        prediction = float(np.median(recent) if cfg.pred_stat == "median" else np.mean(recent))
         if cfg.mode == "nearest_peak":
             # Choose the prominent peak closest to the prediction, wherever it is. There is
             # no hard search window: a hard window forces the jump test onto the global

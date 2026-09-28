@@ -1,0 +1,24 @@
+rule,pooled_mae,pooled_mape,delta_vs_mean6
+"mean,hist=15",14.704,14.325,-1.095
+"mean,hist=20",15.183,14.885,-0.617
+"mean,hist=10",15.396,15.085,-0.404
+"mean,hist=30",15.655,15.361,-0.144
+"mean,hist=45",15.787,15.497,-0.013
+"mean,hist=6",15.799,15.625,0.0
+"mean,hist=60",15.918,15.695,0.118
+"median,hist=10",16.561,16.459,0.762
+"mean,hist=3",17.006,16.999,1.207
+"median,hist=6",17.048,17.228,1.248
+"median,hist=3",17.061,17.518,1.261
+"median,hist=15",17.215,17.261,1.415
+"mean,hist=2",17.632,17.871,1.833
+"median,hist=2",17.632,17.871,1.833
+"median,hist=45",18.027,18.44,2.227
+"median,hist=30",18.393,18.844,2.593
+"mean,hist=1",18.414,18.653,2.615
+"median,hist=1",18.414,18.653,2.615
+"median,hist=20",18.509,18.963,2.709
+"median,hist=60",19.107,19.796,3.307
+IN-FOLD SELECTED,14.704,14.325,-1.095
+diagnostic A survives,0.657,15944,
+selected + bound + reset,13.062,13.072,
