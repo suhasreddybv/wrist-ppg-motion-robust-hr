@@ -372,7 +372,7 @@ Every number here is copied from a committed results file, test or script output
 - **Consequence:** the two Week 3 components are not independent, and reporting their gains additively would be wrong. It also explains why the Week 2 tracker gained so little: re-seeding into an unbounded spectrum is close to a no-op.
 
 ### D-046 · The prediction window, not the prediction rule
-- **Date / commit:** 2026-09-28 · `pending` (closes D-034)
+- **Date / commit:** 2026-09-28 · `2ce4921` (closes D-034)
 - **Status:** adopted
 - **Decision:** the tracker's prediction is a mean over a window whose length is selected in-fold. Fifteen windows is what every fold chooses without the bound.
 - **Correction first:** D-034 claimed the tracker predicted from "the last estimate alone" and that adding a six-window mean was the named gap to SpaMaPlus. **That was wrong and was written without reading the code.** `deque(maxlen=history)` with `history=6` has been in every grid configuration since the tracker was built. The mean filter was never missing; its length had simply never been swept.
@@ -383,7 +383,7 @@ Every number here is copied from a committed results file, test or script output
 - **Reconciliation guard:** the sweep asserts that its 6-window cell reproduces the ablation's +mask+tracker figure to 0.01 bpm, so the two pipelines cannot drift apart unnoticed. An earlier run of the sweep reported 15.70 for that cell against the ablation's 15.80; the guard was added in response and the discrepancy did not survive it.
 
 ### D-047 · Diagnostic A is still unconsumed after prediction tuning
-- **Date / commit:** 2026-09-28 · `pending`
+- **Date / commit:** 2026-09-28 · `2ce4921`
 - **Status:** adopted (finding) — supersedes nothing; extends D-043
 - **Evidence:** the share of residual error windows containing a peak within 3 bpm of the true HR is 58.8% after masking, 60.4% after the bound and reset, and **65.7% after the 15-window prediction** (`results/prediction_rule.csv`).
 - **Reading:** three successive components have lowered error magnitude without touching the selection failure, and the residual errors increasingly *do* contain the right answer. This is the test D-032 proposed and it has now been run three times with the same result.
