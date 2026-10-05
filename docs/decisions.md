@@ -390,7 +390,7 @@ Every number here is copied from a committed results file, test or script output
 - **Consequence:** greedy per-window selection is the binding constraint. A decoder that considers the whole sequence at once — Viterbi over candidate peaks, with emission from peak prominence and transition penalising implausible rate change — is the next thing to build, and it is the only remaining avenue the diagnostics point at.
 
 ### D-048 · The 15-window prediction costs lock-in duration on stairs
-- **Date / commit:** 2026-10-05 · `pending`
+- **Date / commit:** 2026-10-05 · `c9d16fe`
 - **Status:** adopted — `hist=15` kept as the headline, with the cost stated
 - **Decision:** the 15-window mean stays the headline configuration, and the persistence cost is reported beside the MAE gain rather than left out.
 - **Evidence** (`results/hist15_persistence.csv`, `results/hist15_vs_b0.csv`): cohort-wide persistence is unchanged — error time in runs over 30 s is 61.7% against 61.8% for the 6-window mean — and the longest single episode shortens from 409 windows to 355. **On stairs it is markedly worse: the median error run goes from 5 windows to 42**, about 84 s, with p90 210 → 223. Stairs is where heart rate changes fastest, so a 30 s memory is slowest exactly where it should be quickest.
@@ -398,7 +398,7 @@ Every number here is copied from a committed results file, test or script output
 - **Rejected:** reporting 14.70 without this. The gain is real and so is the cost, and a wearable reader cares about the second.
 
 ### D-049 · Predictions for Viterbi decoding, written before implementing it
-- **Date / commit:** 2026-10-05 · `pending`
+- **Date / commit:** 2026-10-05 · `c9d16fe`
 - **Status:** open — predictions registered, to be tested in this session
 - **Why this method:** Diagnostic A says the right peak is present in 65.7% of failed windows and greedy selection takes the wrong one (D-047). Global decoding is built for that: there is no greedy commitment to re-seed from, and an early wrong choice can be revised when later evidence arrives. It also produces a probabilistic formulation, which the glucose work needs in Week 5.
 - **Predictions, registered now:**
@@ -428,7 +428,7 @@ Every number here is copied from a committed results file, test or script output
 - **What reopens it:** any future work touching the spectra turns the taper on first and regenerates everything in one commit.
 
 ### D-052 · Adaptive cancellation is closed, not deferred
-- **Date / commit:** 2026-10-05 · `pending` (closes D-031, D-036)
+- **Date / commit:** 2026-10-05 · `c9d16fe` (closes D-031, D-036)
 - **Status:** closed with an argument
 - **Decision:** time-domain adaptive cancellation (NLMS, batch least squares) is implemented and unit-tested in `src/models/adaptive.py` and will not be evaluated. It is closed on evidence, not left open.
 - **Argument:** adaptive cancellation exists to recover a cardiac component that artifact has corrupted. Diagnostic A measures whether that component survives: the true peak is present among the candidates in **59–66%** of failed windows, and that share *rose* with every improvement until decoding finally moved it. The binding constraint is selection among surviving candidates, not recovery of a destroyed signal. Spending the remaining block on cancellation would have addressed a problem the data says is not the limiting one.
@@ -436,7 +436,7 @@ Every number here is copied from a committed results file, test or script output
 - **What reopens it:** a dataset where Diagnostic A's share is low — that is, where the cardiac peak genuinely does not survive motion. On such data the argument above inverts and cancellation becomes the right tool.
 
 ### D-053 · ANSI/CTA-2065 and what its criterion does not cover
-- **Date / commit:** 2026-10-05 · `pending`
+- **Date / commit:** 2026-10-05 · `c9d16fe`
 - **Status:** adopted
 - **Decision:** the standard's acceptance criterion is stated in the README beside the per-activity table, with the method's pass/fail per activity.
 - **Criterion:** MAPE ≤ 10%, as reported in peer-reviewed work citing ANSI/CTA-2065. **The standard itself is paywalled and was not read directly**, and the README says so.
@@ -444,7 +444,7 @@ Every number here is copied from a committed results file, test or script output
 - **The gap worth naming:** the criterion is an aggregate error. A device that is accurate on average while wrong for minutes at a time passes it, and the persistence finding (D-033, D-048) measures exactly that failure. That is a gap in the standard as much as in this method, and it is in the limitations.
 
 ### D-054 · Repo 1 closed
-- **Date / commit:** 2026-10-05 · `pending` (closes D-038)
+- **Date / commit:** 2026-10-05 · `c9d16fe` (closes D-038)
 - **Status:** adopted
 - **Decision:** the README is a front page — result, figure, per-activity table against b0, Bland–Altman, method positioning, six findings, limitations, reproduce, links. Stage detail, diagnostics, evaluation, the S5 investigation, the Viterbi notes and the taper comparison live in `docs/`.
 - **Verification:** every number on the front page resolves to a committed CSV, checked programmatically — including the claims inherited from briefs, which is the process change D-042 forced.
