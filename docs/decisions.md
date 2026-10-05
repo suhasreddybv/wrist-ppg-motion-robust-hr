@@ -451,7 +451,7 @@ Every number here is copied from a committed results file, test or script output
 - **Open at close:** D-034's successor questions (why 15 windows), D-037's successor (a reset that detects sustained wrongness was built; a better one is still possible), D-043 and D-047 (selection headroom, now partly consumed by decoding), D-052's reopening condition, and D-051's taper migration. Nothing is left in an unknown state.
 
 ### D-055 · The decision log is guarded by a test
-- **Date / commit:** 2026-10-05 · `pending`
+- **Date / commit:** 2026-10-05 · `8c4a72d`
 - **Status:** adopted
 - **Decision:** `tests/test_decision_log.py` parses this file and enforces its own rules: every entry has an id and a status, ids are unique and sequential, every status reference points at an entry that exists, an entry that supersedes or closes another leaves that predecessor's status updated, no entry is both adopted and superseded, nothing marked open is claimed resolved elsewhere, and every adopted entry cites a committed artifact or a measured number. It runs in CI (`.github/workflows/tests.yml`); the dataset-backed tests skip there by design.
 - **Why it exists:** five entries — D-031, D-035, D-036, D-038 and D-049 — were left marked `open` after their successors landed, and the inconsistency survived the Week 3 close-out review. It was found the next morning by a Part A audit, not by reading the file.
