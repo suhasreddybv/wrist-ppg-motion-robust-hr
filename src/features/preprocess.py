@@ -27,6 +27,7 @@ from scipy import signal
 
 from src.data.loader import SubjectRecord
 from src.data.windows import WindowedSubject, window_array, window_subject
+from src.features.taper import analysis_window
 
 CARDIAC_BAND_HZ = (0.4, 4.0)
 FILTER_ORDER = 4
@@ -91,7 +92,7 @@ def resample_acc(acc: np.ndarray, fs_in: int, fs_out: int) -> np.ndarray:
 def _spectral_concentration(w: np.ndarray, fs: int, band=CARDIAC_BAND_HZ,
                             half_width=PEAK_BAND_HZ) -> np.ndarray:
     freqs = np.fft.rfftfreq(w.shape[1], 1 / fs)
-    power = np.abs(np.fft.rfft(w, axis=1)) ** 2
+    power = np.abs(np.fft.rfft(w * analysis_window(w.shape[1]), axis=1)) ** 2
     in_band = (freqs >= band[0]) & (freqs <= band[1])
     p_band = power[:, in_band]
     f_band = freqs[in_band]
@@ -105,7 +106,7 @@ def _out_of_band_ratio(raw_w: np.ndarray, fs: int, band=CARDIAC_BAND_HZ) -> np.n
     """Fraction of power outside the cardiac band, measured on the unfiltered window."""
     w = raw_w - raw_w.mean(axis=1, keepdims=True)
     freqs = np.fft.rfftfreq(w.shape[1], 1 / fs)
-    power = np.abs(np.fft.rfft(w, axis=1)) ** 2
+    power = np.abs(np.fft.rfft(w * analysis_window(w.shape[1]), axis=1)) ** 2
     in_band = (freqs >= band[0]) & (freqs <= band[1])
     total = power.sum(axis=1)
     return np.where(total > 0, power[:, ~in_band].sum(axis=1) / np.maximum(total, 1e-20), 1.0)

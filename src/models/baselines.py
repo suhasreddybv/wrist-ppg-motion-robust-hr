@@ -22,6 +22,7 @@ from __future__ import annotations
 import numpy as np
 
 from src.features.preprocess import CARDIAC_BAND_HZ
+from src.features.taper import analysis_window
 
 ZERO_PAD_NFFT = 4096   # b2-zp: ~0.94 bpm spectral spacing, vs 7.5 bpm for the plain FFT
 
@@ -52,7 +53,7 @@ def spectral_peak_hr(windows: np.ndarray, fs: int = 64,
     w = np.asarray(windows, dtype=float)
     n = nfft or w.shape[1]
     freqs = np.fft.rfftfreq(n, 1 / fs)
-    power = np.abs(np.fft.rfft(w, n=n, axis=1)) ** 2
+    power = np.abs(np.fft.rfft(w * analysis_window(w.shape[1]), n=n, axis=1)) ** 2
     in_band = (freqs >= band[0]) & (freqs <= band[1])
     peak_idx = power[:, in_band].argmax(axis=1)
     return freqs[in_band][peak_idx] * 60.0

@@ -31,6 +31,7 @@ import numpy as np
 from scipy import signal
 
 from src.features.preprocess import CARDIAC_BAND_HZ
+from src.features.taper import analysis_window
 from src.models.baselines import ZERO_PAD_NFFT
 
 ACC_NFFT = 2048
@@ -137,7 +138,7 @@ def band_spectra(bvp_windows: np.ndarray, fs: int, band: tuple[float, float] = C
     """In-band power spectra of each window, on the b2-zp grid. No taper - see apply_masking."""
     freqs = np.fft.rfftfreq(nfft, 1 / fs)
     in_band = (freqs >= band[0]) & (freqs <= band[1])
-    power = np.abs(np.fft.rfft(bvp_windows, n=nfft, axis=1)) ** 2
+    power = np.abs(np.fft.rfft(bvp_windows * analysis_window(bvp_windows.shape[1]), n=nfft, axis=1)) ** 2
     return freqs[in_band], power[:, in_band]
 
 
