@@ -268,7 +268,7 @@ Every number here is copied from a committed results file, test or script output
 
 ### D-031 · Adaptive cancellation deferred; confidence term not attempted
 - **Date / commit:** 2026-09-25 · `049e134`
-- **Status:** open — deferred to Week 3 hardening
+- **Status:** closed 2026-10-05 by D-052 — closed on evidence, not implemented
 - **Decision:** NLMS and batch least-squares cancellation are implemented and unit-tested but not evaluated in the ablation, and the motion-aware confidence term is not attempted.
 - **Reason:** the session's priority order put masking and tracking first, with 4b named as the cut. The published precedent reaches 11.06 with masking and tracking alone, so the ablation's story stands without it. The confidence term was optional and is unnecessary for the reset rule adopted in D-028, which reads only the estimates.
 - **What exists:** `src/models/adaptive.py`, vectorised across windows so a subject's 4,600 windows filter in about a second, with tests covering reference removal and the absence of state leaking across windows. `src/eval/stage4.py` already wires `+adaptive` and `+adaptive+tracker` rows; they are produced by running it without `--no-adaptive`.
@@ -297,12 +297,12 @@ Every number here is copied from a committed results file, test or script output
 - **Note:** a change to the prediction rule does not affect b2-zp, so it can be evaluated without invalidating the baselines.
 
 ### D-035 · Week 3: Hann taper on the PPG spectrum
-- **Status:** open — expected effect: better masking, at the cost of every baseline number
+- **Status:** closed 2026-10-05 by D-051 — measured, reported as a comparison, not adopted
 - **Decision:** none yet. See D-029: leakage from strong motion lines is wider than a notch can follow, and a taper would narrow it.
 - **Constraint:** tapering changes b2-zp itself, so it invalidates every baseline and ablation figure in the repository. It must not be touched before the ship, and when attempted it requires regenerating the whole results tree in one commit.
 
 ### D-036 · Week 3: adaptive cancellation (4b) remains deferred
-- **Status:** open — carried over from D-031
+- **Status:** closed 2026-10-05 by D-052
 - **Note:** implemented and unit-tested in `src/models/adaptive.py`, wired into the ablation, never evaluated. The clipping comparison retracted in D-018 becomes meaningful when it runs.
 
 ### D-037 · Week 3: a reset that detects sustained wrongness rather than jumps
@@ -312,7 +312,7 @@ Every number here is copied from a committed results file, test or script output
 - **Constraint:** any such signal faces the D-014 bar — within-activity AUROC against error, subject-bootstrapped CIs — before it gates anything.
 
 ### D-038 · Week 3: split the README, keep the front page to result, figure, table, limitations
-- **Status:** open
+- **Status:** closed 2026-10-05 by D-054
 - **Decision:** none yet. Stage-by-stage detail moves to `docs/`, the README keeps the headline result, the motion-collision figure, the per-activity table and the limitations.
 - **Reason:** the README now carries the whole pipeline narrative and is long past the eight-minute reading path the project is optimised for.
 
@@ -390,7 +390,7 @@ Every number here is copied from a committed results file, test or script output
 - **Consequence:** greedy per-window selection is the binding constraint. A decoder that considers the whole sequence at once — Viterbi over candidate peaks, with emission from peak prominence and transition penalising implausible rate change — is the next thing to build, and it is the only remaining avenue the diagnostics point at.
 
 ### D-048 · The 15-window prediction costs lock-in duration on stairs
-- **Date / commit:** 2026-10-05 · `c9d16fe`
+- **Date / commit:** 2026-10-05 · `a55f7a4`
 - **Status:** adopted — `hist=15` kept as the headline, with the cost stated
 - **Decision:** the 15-window mean stays the headline configuration, and the persistence cost is reported beside the MAE gain rather than left out.
 - **Evidence** (`results/hist15_persistence.csv`, `results/hist15_vs_b0.csv`): cohort-wide persistence is unchanged — error time in runs over 30 s is 61.7% against 61.8% for the 6-window mean — and the longest single episode shortens from 409 windows to 355. **On stairs it is markedly worse: the median error run goes from 5 windows to 42**, about 84 s, with p90 210 → 223. Stairs is where heart rate changes fastest, so a 30 s memory is slowest exactly where it should be quickest.
@@ -398,8 +398,8 @@ Every number here is copied from a committed results file, test or script output
 - **Rejected:** reporting 14.70 without this. The gain is real and so is the cost, and a wearable reader cares about the second.
 
 ### D-049 · Predictions for Viterbi decoding, written before implementing it
-- **Date / commit:** 2026-10-05 · `c9d16fe`
-- **Status:** open — predictions registered, to be tested in this session
+- **Date / commit:** 2026-10-05 · `a55f7a4`
+- **Status:** tested 2026-10-05 in D-050 — two confirmed, one partially
 - **Why this method:** Diagnostic A says the right peak is present in 65.7% of failed windows and greedy selection takes the wrong one (D-047). Global decoding is built for that: there is no greedy commitment to re-seed from, and an early wrong choice can be revised when later evidence arrives. It also produces a probabilistic formulation, which the glucose work needs in Week 5.
 - **Predictions, registered now:**
   1. **Diagnostic A's share falls for the first time.** Every component so far has left it flat or rising (58.8 → 60.4 → 65.7%). If decoding uses the surviving peaks, the residual errors should stop containing the right answer so often.
