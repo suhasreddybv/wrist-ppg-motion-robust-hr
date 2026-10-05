@@ -10,7 +10,7 @@ Bland-Altman and Pearson r per activity, Fitzpatrick stratification, and the pub
 
 **Agreement with the ECG reference** (`results/agreement.csv`), non-transient windows: pooled Pearson r is 0.399 for b2-zp and 0.402 for mask+tracker, with Bland–Altman bias improving from −14.74 to −11.66 bpm and limits of agreement from [−66.3, +36.9] to [−58.8, +35.4]. The pooled correlation barely moves because between-activity spread dominates it; per activity the change is large — driving r 0.368 → 0.699, lunch 0.283 → 0.779, working 0.336 → 0.725, while stairs falls 0.196 → 0.130. The bias is negative everywhere: this estimator systematically *under*-reads, which follows from motion lines sitting below the cardiac rate.
 
-![Bland–Altman plot of mask+tracker against the ECG reference](figures/bland_altman.png)
+![Bland–Altman plot of mask+tracker against the ECG reference](../figures/bland_altman.png)
 
 **Fitzpatrick skin type** (`results/skin_type.csv`). The cohort has one type-2 subject, eleven type-3 and three type-4, **so this establishes almost nothing statistically** and is reported per subject rather than as a stratum mean that would imply precision it does not have. It is here because almost no published work on this dataset reports it at all.
 

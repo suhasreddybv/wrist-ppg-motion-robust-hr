@@ -10,9 +10,9 @@ How the data layer, windowing, preprocessing, baselines and motion compensation 
 
 `src/data/loader.py` loads each subject into a validated `SubjectRecord` and caches it. It raises on anything the pipeline assumes and does not hold: missing keys, channels whose durations disagree by even one sample, a label count that doesn't match 8 s windows at a 2 s shift, accelerometer data not in g, non-constant "dummy" channels, or out-of-order R-peaks. Nothing is silently coerced; the single tolerated irregularity (exact duplicate R-peaks in S6 and S14) is counted on the record.
 
-Several facts checked against the files differ from the dataset's own documentation. The most consequential is that **wrist ACC in the pickle is already in g**; applying the readme's 1/64 g scaling would silently break motion compensation. The full list is in [data/README.md](data/README.md).
+Several facts checked against the files differ from the dataset's own documentation. The most consequential is that **wrist ACC in the pickle is already in g**; applying the readme's 1/64 g scaling would silently break motion compensation. The full list is in [data/README.md](../data/README.md).
 
-![S1, 60 s of seated-rest BVP: zero-centred with no DC component](figures/s1_rest_bvp.png)
+![S1, 60 s of seated-rest BVP: zero-centred with no DC component](../figures/s1_rest_bvp.png)
 
 **The E4 BVP has no DC component.** A minute of seated rest from S1 has mean 0.084 against SD 41.95 (whole record: mean −0.002), so the signal is manufacturer-processed and zero-centred and **perfusion index is not available** as a quality measure. The segment also shows a motion burst around 38–47 s during nominal rest.
 
@@ -53,7 +53,7 @@ Mean SQI by activity, all 15 subjects, window-weighted — **descriptive only**,
 
 The real test is *within* an activity. Below: AUROC for detecting a b2-zp error above 10 bpm, oriented so higher means worse, with 95% CIs from bootstrapping **subjects** rather than windows — windows within a subject are correlated, and resampling them would understate the interval (`results/sqi_validation.csv`).
 
-![Error by within-activity SQI decile, and AUROC per activity with confidence intervals](figures/sqi_vs_error.png)
+![Error by within-activity SQI decile, and AUROC per activity with confidence intervals](../figures/sqi_vs_error.png)
 
 | Activity | AUROC [95% CI] | Median error, worst vs best SQI decile | Verdict |
 |---|---|---|---|
@@ -121,7 +121,7 @@ Nearly half of table-soccer windows and two-fifths of cycling windows contain sa
 
 ### Per-subject spread
 
-b2-zp MAE ranges from 8.75 (S7) to 45.87 (S5). **S5 is investigated in full in [results/s5_investigation.md](results/s5_investigation.md)** and is excluded from nothing. In short: its oracle error is the *best* in the cohort and its resting b2 MAE is ordinary (3.95 vs 3.23 median), so alignment and sensor contact are fine. What differs is heart rate: S5's labels are higher in every activity, mean 125.8 bpm against a cohort mean of 86.6, and above 120 bpm in 54% of windows against 7.7% elsewhere. That was verified rather than assumed — ECG and PPG agree independently at rest (median 92.7 vs 91.9 bpm over 300 sitting windows), and inspection of chest-ECG strips in high-rate, low-motion, unclipped windows shows the stored R-peaks sitting on QRS complexes with T waves unmarked, RR intervals matching the labels to 0.1 bpm, and no short/long alternation that would indicate T-wave oversensing (0.00% of S5's high-rate windows, against 0.00% for S7 and 0.36% for S10). The low-frequency lock that causes the error is cohort-wide, but a true HR near 160 turns each locked window into a ~130 bpm error instead of a ~40 bpm one. Under MAPE, S5 is 35.8% against a cohort median of 19.1% — still worst, far less extreme.
+b2-zp MAE ranges from 8.75 (S7) to 45.87 (S5). **S5 is investigated in full in [results/s5_investigation.md](s5-investigation.md)** and is excluded from nothing. In short: its oracle error is the *best* in the cohort and its resting b2 MAE is ordinary (3.95 vs 3.23 median), so alignment and sensor contact are fine. What differs is heart rate: S5's labels are higher in every activity, mean 125.8 bpm against a cohort mean of 86.6, and above 120 bpm in 54% of windows against 7.7% elsewhere. That was verified rather than assumed — ECG and PPG agree independently at rest (median 92.7 vs 91.9 bpm over 300 sitting windows), and inspection of chest-ECG strips in high-rate, low-motion, unclipped windows shows the stored R-peaks sitting on QRS complexes with T waves unmarked, RR intervals matching the labels to 0.1 bpm, and no short/long alternation that would indicate T-wave oversensing (0.00% of S5's high-rate windows, against 0.00% for S7 and 0.36% for S10). The low-frequency lock that causes the error is cohort-wide, but a true HR near 160 turns each locked window into a ~130 bpm error instead of a ~40 bpm one. Under MAPE, S5 is 35.8% against a cohort median of 19.1% — still worst, far less extreme.
 
 ## Motion compensation (Stage 4)
 
@@ -164,7 +164,7 @@ Pooled over all 64,697 windows **including transients**, which is what the publi
 | cycling | **29.75** | 42.91 | 27.38 | 36.96 |
 | stairs | **38.17** | 52.55 | 37.37 | 56.01 |
 
-![Per-activity MAE for b2-zp and mask+tracker with the b0 constant baseline drawn across each activity](figures/per_activity_mae.png)
+![Per-activity MAE for b2-zp and mask+tracker with the b0 constant baseline drawn across each activity](../figures/per_activity_mae.png)
 
 **On four activities this method is worse than predicting a constant.** Not merely worse than b2-zp: stairs **56.01 against the b0 constant's 30.95**, table soccer 26.73 against 14.02, walking 25.18 against 15.46, cycling 36.96 against 33.74. A method that loses to "always guess the mean heart rate" on half the protocol has not solved those activities. Tracking assumes the previous estimate is informative; during sustained vigorous motion the spectrum offers a stable *wrong* peak and the tracker holds it. On the quiet activities the same mechanism is transformative — lunch 14.26 → 6.64, working 8.62 → 4.92. Week 3 addresses this directly; see below.
 
@@ -182,7 +182,7 @@ Yes — the information is there and the problem is selection. For masked window
 
 That peak is essentially never the largest one (rank 1: 0.0%, by construction — if it were, the window would not be in error), but it is **rank 2 in 34.9% of cases and rank 3 in 24.2%**. Roughly three in five surviving peaks are in the top three. So a better selection rule has somewhere to go, and this is a selection problem rather than a destroyed-signal problem. The worst window in the cohort makes it concrete:
 
-![Best and worst windows of the full method: BVP trace and masked spectrum](figures/best_worst_windows.png)
+![Best and worst windows of the full method: BVP trace and masked spectrum](../figures/best_worst_windows.png)
 
 The bottom row is S5 cycling at a true 173 bpm. The cardiac peak is plainly present in the masked spectrum, and the tracker returned 30 bpm.
 
@@ -195,7 +195,7 @@ Mean error is not the whole story for a wearable. Measuring runs of consecutive 
 | b2-zp | 3,574 | 3 | 10 | 99 | 27.6% |
 | mask+tracker | 2,876 | 1 | 6 | **409** | **61.8%** |
 
-![Run-length distribution of error episodes by activity, b2-zp vs mask+tracker](figures/error_persistence.png)
+![Run-length distribution of error episodes by activity, b2-zp vs mask+tracker](../figures/error_persistence.png)
 
 **The method reduces mean error while making individual errors last far longer, and for a wearable that is the more dangerous failure.** It removes many short errors — the median run drops from 3 windows to 1 — but almost two thirds of remaining error time now sits in episodes longer than 30 seconds, against a quarter before. On stairs the p90 run length goes from 20 windows to **210** (7 minutes), and the longest single error episode in the cohort runs to 409 windows, about 13 minutes.
 

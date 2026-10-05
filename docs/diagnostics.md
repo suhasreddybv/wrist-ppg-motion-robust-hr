@@ -13,7 +13,7 @@ Yes — the information is there and the problem is selection. For masked window
 
 That peak is essentially never the largest one (rank 1: 0.0%, by construction — if it were, the window would not be in error), but it is **rank 2 in 34.9% of cases and rank 3 in 24.2%**. Roughly three in five surviving peaks are in the top three. So a better selection rule has somewhere to go, and this is a selection problem rather than a destroyed-signal problem. The worst window in the cohort makes it concrete:
 
-![Best and worst windows of the full method: BVP trace and masked spectrum](figures/best_worst_windows.png)
+![Best and worst windows of the full method: BVP trace and masked spectrum](../figures/best_worst_windows.png)
 
 The bottom row is S5 cycling at a true 173 bpm. The cardiac peak is plainly present in the masked spectrum, and the tracker returned 30 bpm.
 
@@ -26,7 +26,7 @@ Mean error is not the whole story for a wearable. Measuring runs of consecutive 
 | b2-zp | 3,574 | 3 | 10 | 99 | 27.6% |
 | mask+tracker | 2,876 | 1 | 6 | **409** | **61.8%** |
 
-![Run-length distribution of error episodes by activity, b2-zp vs mask+tracker](figures/error_persistence.png)
+![Run-length distribution of error episodes by activity, b2-zp vs mask+tracker](../figures/error_persistence.png)
 
 **The method reduces mean error while making individual errors last far longer, and for a wearable that is the more dangerous failure.** It removes many short errors — the median run drops from 3 windows to 1 — but almost two thirds of remaining error time now sits in episodes longer than 30 seconds, against a quarter before. On stairs the p90 run length goes from 20 windows to **210** (7 minutes), and the longest single error episode in the cohort runs to 409 windows, about 13 minutes.
 
