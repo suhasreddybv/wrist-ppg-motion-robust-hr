@@ -10,7 +10,7 @@ error only shows they are smooth. Two independent checks:
     Signs: alternating short/long RR, peaks on broad rounded waves, a rate near 2x
     a plausible value.
 
-Appends to results/s5_investigation.md; writes figures/s5_ecg_check.png.
+Appends to docs/s5-investigation.md; writes figures/s5_ecg_check.png.
 """
 from __future__ import annotations
 
@@ -175,12 +175,12 @@ def main() -> None:
              + ", ".join(f"{k} {v:.2%}" for k, v in alt.items() if k != SUBJECT)
              + ". T-wave oversensing would raise this sharply for the affected subject.\n")
 
-    out = REPO_ROOT / "results" / "s5_investigation.md"
+    out = REPO_ROOT / "docs" / "s5-investigation.md"
     missing = [r["idx"] for r in strip_rows if r["idx"] not in STRIP_VERDICTS]
     if missing:
         print(f"WARNING: no recorded inspection verdict for windows {missing}; inspect before publishing.")
     out.write_text(out.read_text() + "".join(L))
-    print(f"\nappended to results/s5_investigation.md and wrote figures/s5_ecg_check.png")
+    print(f"\nappended to docs/s5-investigation.md and wrote figures/s5_ecg_check.png")
 
 
 if __name__ == "__main__":

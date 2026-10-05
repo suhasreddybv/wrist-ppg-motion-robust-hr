@@ -407,3 +407,45 @@ Every number here is copied from a committed results file, test or script output
   3. **Stairs, table soccer and walking move toward beating b0.** They are the three that still lose to a constant.
 - **Falsification:** if MAE improves while A and B stay flat, the gain came from somewhere other than the mechanism claimed, and that needs explaining rather than reporting.
 - **Honesty guard:** Viterbi was chosen *after* seeing Diagnostic A, as D-028 and D-041 record for earlier design choices. Hyperparameters are in-fold so the fit is clean; the design choice was informed by test-set diagnostics.
+
+### D-050 · Viterbi: the predictions, tested
+- **Date / commit:** 2026-10-05 · `36ce1d1` (tests D-049)
+- **Status:** adopted — fixed-lag Viterbi reported beside the greedy headline, which stands
+- **Result** (`results/viterbi_ablation.csv`, no bound): fixed-lag 14.11 bpm, full-session 12.97, against the greedy headline's 14.70 and b2-zp's 18.98. Against b2-zp, fixed-lag gains +4.87 [+3.95, +5.90] and improves **15/15 subjects**, where the greedy headline gains +4.27 [+2.16, +6.98] on 12/15.
+- **Against the headline it is not established:** +0.60 bpm [−1.35, +2.36], 9/15 improved. Per the guard registered in D-049, **the greedy headline stands** and Viterbi is reported as an equal-MAE alternative with different properties, not as an improvement.
+- **Prediction 1 — Diagnostic A falls: CONFIRMED.** 65.7% → **54.6%**, the first fall after three components left it flat or rising.
+- **Prediction 2 — persistence falls, stairs most: CONFIRMED on stairs, flat cohort-wide.** Stairs median error run 42 → 12 windows, p90 223 → 85, long-run share 97.3% → 88.9%. Cohort-wide 61.7% → 62.9%, and the number of runs halves (3,059 → 1,539) while the longest shortens (355 → 228): fewer, better-contained episodes.
+- **Prediction 3 — stairs, table soccer and walking move toward b0: PARTIALLY CONFIRMED.** Stairs 54.92 → 32.15 against b0's 30.95, nearly closed, and cycling moves from losing to b0 to beating it (36.57 → 22.57). Table soccer (27.42 → 28.29) and walking (24.75 → 27.41) move the wrong way.
+- **Configuration:** K=6 peaks, σ=6 bpm, lag 8 windows — a **16-second delay**, chosen in-fold by 14/15 folds. That latency is the price of causality and is stated in the README.
+- **Honesty guard (D-049):** Viterbi was chosen after seeing Diagnostic A. Hyperparameters are in-fold; the design choice was not blind.
+
+### D-051 · The Hann taper is measured and not adopted
+- **Date / commit:** 2026-10-05 · `36ce1d1` (closes D-035)
+- **Status:** adopted — pre-taper numbers stay canonical, switch committed and defaulted off
+- **Evidence** (`results/taper_comparison.csv`, `docs/taper-comparison.md`): no baseline moves more than **0.39 bpm**, well inside the 1 bpm threshold, and with the prediction rule selected in-fold the headline agrees to 0.11 bpm (14.70 against 14.81).
+- **The interesting part is the attribution, not the headline:** under a taper the tracker is worth **2.34 bpm more** and masking **0.52 bpm less**, and Diagnostic A's surviving-peak share falls from 66% to 40%. Part of what masking appeared to contribute was leakage mitigation that a window function does more cheaply, and part of the selection headroom is a leakage artefact.
+- **Decision:** reported as a comparison. Making it canonical means regenerating every CSV and figure and re-verifying the README end to end; started in the last hours before the repo closes, the realistic outcome is a half-migrated tree, which is worse than either state. The headline is unchanged, so the migration would buy conformity with standard practice, not accuracy.
+- **What reopens it:** any future work touching the spectra turns the taper on first and regenerates everything in one commit.
+
+### D-052 · Adaptive cancellation is closed, not deferred
+- **Date / commit:** 2026-10-05 · `pending` (closes D-031, D-036)
+- **Status:** closed with an argument
+- **Decision:** time-domain adaptive cancellation (NLMS, batch least squares) is implemented and unit-tested in `src/models/adaptive.py` and will not be evaluated. It is closed on evidence, not left open.
+- **Argument:** adaptive cancellation exists to recover a cardiac component that artifact has corrupted. Diagnostic A measures whether that component survives: the true peak is present among the candidates in **59–66%** of failed windows, and that share *rose* with every improvement until decoding finally moved it. The binding constraint is selection among surviving candidates, not recovery of a destroyed signal. Spending the remaining block on cancellation would have addressed a problem the data says is not the limiting one.
+- **Deviation from the plan, stated:** 4b was the original Week 2 Monday item. It was deferred once on priority and is now closed on evidence.
+- **What reopens it:** a dataset where Diagnostic A's share is low — that is, where the cardiac peak genuinely does not survive motion. On such data the argument above inverts and cancellation becomes the right tool.
+
+### D-053 · ANSI/CTA-2065 and what its criterion does not cover
+- **Date / commit:** 2026-10-05 · `pending`
+- **Status:** adopted
+- **Decision:** the standard's acceptance criterion is stated in the README beside the per-activity table, with the method's pass/fail per activity.
+- **Criterion:** MAPE ≤ 10%, as reported in peer-reviewed work citing ANSI/CTA-2065. **The standard itself is paywalled and was not read directly**, and the README says so.
+- **Result:** 14.3% pooled — a fail. It passes on sitting (4.2%), working (5.7%), lunch (6.4%) and driving (6.8%), and fails on every motion activity, worst on stairs at 45.2%.
+- **The gap worth naming:** the criterion is an aggregate error. A device that is accurate on average while wrong for minutes at a time passes it, and the persistence finding (D-033, D-048) measures exactly that failure. That is a gap in the standard as much as in this method, and it is in the limitations.
+
+### D-054 · Repo 1 closed
+- **Date / commit:** 2026-10-05 · `pending` (closes D-038)
+- **Status:** adopted
+- **Decision:** the README is a front page — result, figure, per-activity table against b0, Bland–Altman, method positioning, six findings, limitations, reproduce, links. Stage detail, diagnostics, evaluation, the S5 investigation, the Viterbi notes and the taper comparison live in `docs/`.
+- **Verification:** every number on the front page resolves to a committed CSV, checked programmatically — including the claims inherited from briefs, which is the process change D-042 forced.
+- **Open at close:** D-034's successor questions (why 15 windows), D-037's successor (a reset that detects sustained wrongness was built; a better one is still possible), D-043 and D-047 (selection headroom, now partly consumed by decoding), D-052's reopening condition, and D-051's taper migration. Nothing is left in an unknown state.

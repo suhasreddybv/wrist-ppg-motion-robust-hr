@@ -5,7 +5,7 @@ Diagnostic logic:
 - If S5 is normal at rest and bad only under motion, the cause is motion.
 - If S5's b1 oracle error is normal, labels and alignment are fine.
 
-Writes results/s5_investigation.md and figures/s5_worst_windows.png.
+Writes docs/s5-investigation.md and figures/s5_worst_windows.png.
 S5 is never excluded from any result.
 """
 from __future__ import annotations
@@ -204,7 +204,7 @@ def main() -> None:
              f"motion handling in Stage 4, not exclusion - and {SUBJECT} is the subject that will show "
              "whether it works.\n")
 
-    out = REPO_ROOT / "results" / "s5_investigation.md"
+    out = REPO_ROOT / "docs" / "s5-investigation.md"
     out.write_text("".join(L))
     print("".join(L))
     print(f"wrote {out.relative_to(REPO_ROOT)} and figures/s5_worst_windows.png")
