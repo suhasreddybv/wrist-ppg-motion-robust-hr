@@ -1,0 +1,12 @@
+quantity,rectangular,hann,delta
+baseline b0,18.566,18.566,0.0
+baseline b1,1.488,1.488,0.0
+baseline b2,20.057,19.67,-0.387
+baseline b2_zp,18.976,19.138,0.162
++tracker,17.528,15.192,-2.336
++mask,18.615,19.133,0.518
++mask+tracker,15.799,15.25,-0.549
+"prediction mean,hist=6",15.799,15.25,-0.549
+"prediction mean,hist=15",14.704,15.252,0.548
+prediction IN-FOLD SELECTED,14.704,14.81,0.106
+diagnostic A survives,0.657,0.402,-0.255

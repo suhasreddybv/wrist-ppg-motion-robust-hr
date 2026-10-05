@@ -41,9 +41,16 @@ def main() -> None:
     for s_ in subs:
         exact[s_["sid"]] = s_["mask_track"][mt_chosen[s_["sid"]]]
     recon = pooled(exact)
-    print(f"reconciliation: ablation +mask+tracker = {recon:.3f} bpm")
-    assert abs(recon - 15.799) < 0.01, (
-        f"the sweep no longer reproduces the ablation's +mask+tracker ({recon:.3f} vs 15.799); "
+    # Compare against the ablation CSV produced by the SAME tree, not a hardcoded constant:
+    # under a different analysis window every number moves, and the guard must test that the
+    # two pipelines agree with each other, not that they match a particular past run.
+    import csv as _csv
+    ref_rows = {(r["method"], r["activity"]): r for r in
+                _csv.DictReader(open(REPO_ROOT / "results" / "stage4_ablation.csv"))}
+    ref = float(ref_rows[("+mask+tracker", "POOLED (incl. transient)")]["mae"])
+    print(f"reconciliation: sweep {recon:.3f} vs ablation CSV {ref:.3f} bpm")
+    assert abs(recon - ref) < 0.01, (
+        f"the sweep no longer reproduces the ablation's +mask+tracker ({recon:.3f} vs {ref:.3f}); "
         "the pipelines have diverged and the sweep cannot be compared to the ablation")
 
     variants: dict[str, dict[str, np.ndarray]] = {}

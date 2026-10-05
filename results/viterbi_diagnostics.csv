@@ -1,0 +1,10 @@
+activity,longest_run,median_run,method,metric,n,p90_run,value
+ALL (excl. transient),,,,diagnostic_A_survives,13214,,0.5465
+stairs,242,42.0,+mask+tracker(hist=15),persistence,37,223.2,0.9732
+stairs,228,11.5,+mask+viterbi-fixedlag,persistence,68,85.30000000000001,0.8893
+cycling,225,2.0,+mask+tracker(hist=15),persistence,162,27.0,0.8532
+cycling,190,5.0,+mask+viterbi-fixedlag,persistence,64,29.400000000000006,0.8075
+walking,327,2.0,+mask+tracker(hist=15),persistence,198,21.800000000000068,0.8554
+walking,215,5.0,+mask+viterbi-fixedlag,persistence,132,52.50000000000003,0.8237
+ALL (excl. transient),355,1.0,+mask+tracker(hist=15),persistence,3059,5.0,0.6167
+ALL (excl. transient),228,3.0,+mask+viterbi-fixedlag,persistence,1539,19.0,0.6292
