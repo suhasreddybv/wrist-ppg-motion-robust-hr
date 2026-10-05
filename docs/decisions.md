@@ -388,3 +388,22 @@ Every number here is copied from a committed results file, test or script output
 - **Evidence:** the share of residual error windows containing a peak within 3 bpm of the true HR is 58.8% after masking, 60.4% after the bound and reset, and **65.7% after the 15-window prediction** (`results/prediction_rule.csv`).
 - **Reading:** three successive components have lowered error magnitude without touching the selection failure, and the residual errors increasingly *do* contain the right answer. This is the test D-032 proposed and it has now been run three times with the same result.
 - **Consequence:** greedy per-window selection is the binding constraint. A decoder that considers the whole sequence at once — Viterbi over candidate peaks, with emission from peak prominence and transition penalising implausible rate change — is the next thing to build, and it is the only remaining avenue the diagnostics point at.
+
+### D-048 · The 15-window prediction costs lock-in duration on stairs
+- **Date / commit:** 2026-10-05 · `pending`
+- **Status:** adopted — `hist=15` kept as the headline, with the cost stated
+- **Decision:** the 15-window mean stays the headline configuration, and the persistence cost is reported beside the MAE gain rather than left out.
+- **Evidence** (`results/hist15_persistence.csv`, `results/hist15_vs_b0.csv`): cohort-wide persistence is unchanged — error time in runs over 30 s is 61.7% against 61.8% for the 6-window mean — and the longest single episode shortens from 409 windows to 355. **On stairs it is markedly worse: the median error run goes from 5 windows to 42**, about 84 s, with p90 210 → 223. Stairs is where heart rate changes fastest, so a 30 s memory is slowest exactly where it should be quickest.
+- **Why it is still the headline:** the MAE gain is +1.10 bpm, cohort persistence is flat, and on stairs *both* settings are already unusable — 96.8% and 97.3% of stairs error time sits in runs over 30 s, and both lose to the b0 constant by more than 20 bpm. The choice is between two settings that fail stairs, one of which is better everywhere else.
+- **Rejected:** reporting 14.70 without this. The gain is real and so is the cost, and a wearable reader cares about the second.
+
+### D-049 · Predictions for Viterbi decoding, written before implementing it
+- **Date / commit:** 2026-10-05 · `pending`
+- **Status:** open — predictions registered, to be tested in this session
+- **Why this method:** Diagnostic A says the right peak is present in 65.7% of failed windows and greedy selection takes the wrong one (D-047). Global decoding is built for that: there is no greedy commitment to re-seed from, and an early wrong choice can be revised when later evidence arrives. It also produces a probabilistic formulation, which the glucose work needs in Week 5.
+- **Predictions, registered now:**
+  1. **Diagnostic A's share falls for the first time.** Every component so far has left it flat or rising (58.8 → 60.4 → 65.7%). If decoding uses the surviving peaks, the residual errors should stop containing the right answer so often.
+  2. **Persistence falls, stairs most of all.** No greedy track means no lock-in to hold.
+  3. **Stairs, table soccer and walking move toward beating b0.** They are the three that still lose to a constant.
+- **Falsification:** if MAE improves while A and B stay flat, the gain came from somewhere other than the mechanism claimed, and that needs explaining rather than reporting.
+- **Honesty guard:** Viterbi was chosen *after* seeing Diagnostic A, as D-028 and D-041 record for earlier design choices. Hyperparameters are in-fold so the fit is clean; the design choice was informed by test-set diagnostics.

@@ -1,0 +1,28 @@
+activity,method,n_runs,median_run,p90_run,longest_run,share_in_runs_over_30s
+sitting,b2-zp,118,2.0,5.299999999999997,26,0.0783
+sitting,hist=6,162,1.0,4.0,19,0.1436
+sitting,hist=15,211,1.0,3.0,19,0.0992
+stairs,b2-zp,264,4.5,20.0,76,0.5103
+stairs,hist=6,51,5.0,210.0,242,0.9678
+stairs,hist=15,37,42.0,223.2,242,0.9732
+table soccer,b2-zp,226,4.0,17.5,99,0.4821
+table soccer,hist=6,163,2.0,30.600000000000193,155,0.7532
+table soccer,hist=15,190,2.0,17.19999999999999,155,0.6897
+cycling,b2-zp,222,4.0,13.0,87,0.3801
+cycling,hist=6,125,2.0,48.20000000000002,277,0.8951
+cycling,hist=15,162,2.0,27.0,225,0.8532
+driving,b2-zp,575,3.0,8.0,29,0.0909
+driving,hist=6,523,1.0,6.0,118,0.3356
+driving,hist=15,574,1.0,4.0,97,0.1707
+lunch,b2-zp,1255,3.0,8.0,40,0.108
+lunch,hist=6,1168,1.0,5.0,76,0.1984
+lunch,hist=15,1149,1.0,4.0,47,0.0998
+walking,b2-zp,401,4.0,17.0,67,0.4754
+walking,hist=6,161,2.0,18.0,369,0.8565
+walking,hist=15,198,2.0,21.800000000000068,327,0.8554
+working,b2-zp,519,3.0,7.0,22,0.0634
+working,hist=6,528,1.0,4.0,59,0.2083
+working,hist=15,544,1.0,4.0,59,0.1419
+ALL (excl. transient),b2-zp,3574,3.0,10.0,99,0.2763
+ALL (excl. transient),hist=6,2876,1.0,6.0,409,0.6182
+ALL (excl. transient),hist=15,3059,1.0,5.0,355,0.6167
