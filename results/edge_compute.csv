@@ -1,0 +1,13 @@
+item,cycles,source
+"PPG real FFT, 4096 points (CMSIS-DSP 5, Cortex-M4F, published)",331857,FFT4CM4F benchmark
+"ACC real FFTs, 4 x 2048 points (published)",606904,FFT4CM4F benchmark
+"band-pass, 128 new samples x 4 biquads x 5 MAC",7680,loop size from the code x assumed cycles per op
+"z-score, 512 samples (mean, variance, scale)",4608,loop size from the code x assumed cycles per op
+"PPG power spectrum, in-band bins",2079,loop size from the code x assumed cycles per op
+"ACC detrend, magnitude, taper: 512 x 4 signals",24576,loop size from the code x assumed cycles per op
+"ACC power, 4 x 1025 bins, sum and normalise",36900,loop size from the code x assumed cycles per op
+ACC peak search over the motion band,5000,loop size from the code x assumed cycles per op
+notch gains: lines x in-band bins x (exp + 4 MAC),77616,loop size from the code x assumed cycles per op
+mask multiply and PPG peak search,5313,loop size from the code x assumed cycles per op
+tracker step,200,loop size from the code x assumed cycles per op
+total per window,1102733,17.23 ms at 64 MHz

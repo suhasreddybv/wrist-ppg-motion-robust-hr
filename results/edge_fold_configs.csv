@@ -1,0 +1,16 @@
+subject,mask_config,tracker_config,history,mae_hist15
+S1,"K=1,prom=0.1,width=2.0,depth=0.2,gate=0.02","nearest_peak,prom=0.05,hist=6,jump=25.0,reset=2",15,12.6126
+S2,"K=1,prom=0.1,width=2.0,depth=0.2,gate=0.02","nearest_peak,prom=0.05,hist=6,jump=25.0,reset=3",15,13.2951
+S3,"K=1,prom=0.1,width=2.0,depth=0.2,gate=0.02","nearest_peak,prom=0.05,hist=6,jump=25.0,reset=3",15,12.9927
+S4,"K=1,prom=0.1,width=2.0,depth=0.2,gate=0.02","nearest_peak,prom=0.05,hist=6,jump=25.0,reset=3",15,13.9132
+S5,"K=1,prom=0.1,width=2.0,depth=0.02,gate=0.02","nearest_peak,prom=0.05,hist=6,jump=25.0,reset=3",15,27.7975
+S6,"K=1,prom=0.1,width=2.0,depth=0.2,gate=0.02","nearest_peak,prom=0.05,hist=6,jump=25.0,reset=3",15,20.2089
+S7,"K=1,prom=0.1,width=2.0,depth=0.2,gate=0.02","nearest_peak,prom=0.05,hist=6,jump=25.0,reset=3",15,10.3386
+S8,"K=1,prom=0.1,width=2.0,depth=0.2,gate=0.02","nearest_peak,prom=0.05,hist=6,jump=25.0,reset=3",15,11.4202
+S9,"K=1,prom=0.1,width=2.0,depth=0.2,gate=0.02","nearest_peak,prom=0.05,hist=6,jump=25.0,reset=3",15,18.613
+S10,"K=1,prom=0.1,width=2.0,depth=0.2,gate=0.02","nearest_peak,prom=0.05,hist=6,jump=25.0,reset=2",15,8.3665
+S11,"K=1,prom=0.1,width=2.0,depth=0.02,gate=0.02","nearest_peak,prom=0.05,hist=6,jump=25.0,reset=3",15,22.8217
+S12,"K=1,prom=0.1,width=2.0,depth=0.02,gate=0.02","nearest_peak,prom=0.05,hist=6,jump=25.0,reset=3",15,14.0899
+S13,"K=1,prom=0.1,width=2.0,depth=0.2,gate=0.02","nearest_peak,prom=0.05,hist=6,jump=25.0,reset=3",15,10.6767
+S14,"K=1,prom=0.1,width=2.0,depth=0.2,gate=0.02","nearest_peak,prom=0.05,hist=6,jump=25.0,reset=3",15,12.086
+S15,"K=1,prom=0.1,width=2.0,depth=0.02,gate=0.02","nearest_peak,prom=0.05,hist=6,jump=25.0,reset=3",15,11.3273

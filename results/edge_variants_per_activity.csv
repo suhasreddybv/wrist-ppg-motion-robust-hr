@@ -1,0 +1,49 @@
+variant,activity,folds,mae_mean_of_folds
+reference,sitting,15,2.586
+reference,stairs,15,54.918
+reference,table soccer,15,27.419
+reference,cycling,15,36.572
+reference,driving,15,5.57
+reference,lunch,14,5.238
+reference,walking,14,24.747
+reference,working,14,4.656
+causal_f64,sitting,15,2.614
+causal_f64,stairs,15,56.838
+causal_f64,table soccer,15,24.079
+causal_f64,cycling,15,34.338
+causal_f64,driving,15,6.111
+causal_f64,lunch,14,5.528
+causal_f64,walking,14,20.986
+causal_f64,working,14,4.752
+causal_f32,sitting,15,2.614
+causal_f32,stairs,15,56.838
+causal_f32,table soccer,15,24.079
+causal_f32,cycling,15,34.338
+causal_f32,driving,15,6.111
+causal_f32,lunch,14,5.528
+causal_f32,walking,14,20.986
+causal_f32,working,14,4.752
+q15,sitting,15,2.575
+q15,stairs,15,56.622
+q15,table soccer,15,27.175
+q15,cycling,15,35.835
+q15,driving,15,8.187
+q15,lunch,14,5.694
+q15,walking,14,22.754
+q15,working,14,4.922
+q15_state16,sitting,15,3.288
+q15_state16,stairs,15,57.866
+q15_state16,table soccer,15,33.272
+q15_state16,cycling,15,40.047
+q15_state16,driving,15,8.359
+q15_state16,lunch,14,6.614
+q15_state16,walking,14,21.868
+q15_state16,working,14,5.802
+q8,sitting,15,2.608
+q8,stairs,15,55.552
+q8,table soccer,15,28.436
+q8,cycling,15,36.07
+q8,driving,15,6.979
+q8,lunch,14,5.584
+q8,walking,14,21.909
+q8,working,14,4.844

@@ -1,0 +1,15 @@
+led,burst_windows,led_on_s,mae_bpm,sensing_uC_per_update,compute_uC_per_update,compute_share_pct,avg_current_uA,capacity_for_2y_mAh,cr2032_months
+"datasheet point, 62 mA / 117.3 us",1,8,19.192,7545.1,56.86,0.75,29.91,524.0,10.5
+"datasheet point, 62 mA / 117.3 us",2,10,19.497,9431.3,113.72,1.19,36.39,638.0,8.7
+"datasheet point, 62 mA / 117.3 us",4,14,20.37,13203.9,227.44,1.69,49.34,865.0,6.4
+"datasheet point, 62 mA / 117.3 us",8,22,19.336,20749.0,454.88,2.15,75.25,1319.0,4.2
+"datasheet point, 62 mA / 117.3 us",15,36,19.449,33952.8,852.9,2.45,120.59,2114.0,2.6
+"datasheet point, 62 mA / 117.3 us",30,66,18.809,62246.9,1705.79,2.67,217.75,3818.0,1.4
+"datasheet point, 62 mA / 117.3 us",continuous,300.0,14.333,282940.2,8528.95,2.93,976.14,17114.0,0.3
+"low-power point, 31 mA / 58.7 us (assumed)",1,8,19.192,2012.5,56.86,2.75,11.47,201.0,27.5
+"low-power point, 31 mA / 58.7 us (assumed)",2,10,19.497,2515.7,113.72,4.32,13.34,234.0,23.6
+"low-power point, 31 mA / 58.7 us (assumed)",4,14,20.37,3521.9,227.44,6.07,17.07,299.0,18.4
+"low-power point, 31 mA / 58.7 us (assumed)",8,22,19.336,5534.5,454.88,7.59,24.54,430.0,12.8
+"low-power point, 31 mA / 58.7 us (assumed)",15,36,19.449,9056.4,852.9,8.61,37.6,659.0,8.4
+"low-power point, 31 mA / 58.7 us (assumed)",30,66,18.809,16603.4,1705.79,9.32,65.6,1150.0,4.8
+"low-power point, 31 mA / 58.7 us (assumed)",continuous,300.0,14.333,75469.8,8528.95,10.15,284.57,4989.0,1.1

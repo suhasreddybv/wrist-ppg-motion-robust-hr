@@ -46,6 +46,16 @@ Bold beats the constant. **Three activities still lose to it**: stairs, table so
 
 In Charlton's taxonomy of wearable heart-rate algorithms this is **reference-based artifact cancellation followed by tracking**: the accelerometer supplies a motion reference used to down-weight motion lines in the PPG spectrum, and a tracker or decoder then selects among the surviving candidates. **Detect-and-discard was attempted and abandoned** — a per-window signal-quality index was built and validated, and it turned out to predict error well at rest (AUROC 0.895) and not at all under motion, where its confidence interval includes chance on stairs, cycling and walking and sits *below* chance on table soccer. Gating on it would have discarded exactly the windows it cannot judge, so the reset rule reads the estimates rather than any quality score. Time-domain adaptive cancellation was implemented, then closed without evaluation on the evidence that the cardiac component survives motion rather than being destroyed by it.
 
+<!-- edge-budget:start -->
+## On a wrist: the inference budget (Week 7)
+
+The frozen pipeline was run the way a watch would run it ([docs/edge-budget.md](docs/edge-budget.md)). It has no learned weights — a band-pass, spectra, accelerometer notches and a tracker — so there is nothing for ONNX export or int8 quantisation of a network to act on; the edge question is fixed-point arithmetic, latency, memory and energy, and that is what was measured. Nothing was refitted: every variant uses the configuration each LOSO fold selected.
+
+- **Arithmetic is not the constraint.** A causal band-pass (a device cannot filter backwards) gives 14.27 bpm against the published zero-phase 14.70; float32 is identical (14.27); 16-bit fixed point gives 15.08 (+0.81 [-0.75, +2.51] against causal float64) and 8-bit storage 14.51 (+0.24 [-0.87, +1.49]) — neither distinguishable from float. The one arithmetic choice that costs accuracy is a band-pass that keeps only 16-bit state between sections: 17.12 bpm (+2.85 [+0.99, +5.13]), because a 0.4 Hz cutoff at 64 Hz puts the poles next to the unit circle.
+- **Compute is not the constraint either.** About 1.10 million Cortex-M4F cycles per 8-s window — 17.2 ms at 64 MHz, 85 % of it the five FFTs — and 46 KB of RAM in float32 (31 KB in Q15). On this Mac the streaming path takes 163 µs per window on one thread.
+- **The LED is the constraint, and duty cycling costs the tracker.** Tracking continuously gives 14.33 bpm but draws 285–976 µA, 1.1 months or less on a CR2032. Waking every five minutes for one window draws 11.5 µA at a reduced LED setting — 27.5 months on a CR2032 — but scores 19.19 bpm (+4.86 [+2.93, +7.17]): the tracker's whole gain is continuity, and a cold start gives it up. Longer bursts do not buy it back (30 windows, 66 s of LED: 18.81). Compute is 0.8–10 % of the energy in every configuration.
+<!-- edge-budget:end -->
+
 ## Limitations
 
 - **Worse than a constant on three activities.** Stairs (32.15 vs b0's 30.95), table soccer (28.29 vs 14.02) and walking (27.41 vs 15.46).
@@ -66,13 +76,19 @@ In Charlton's taxonomy of wearable heart-rate algorithms this is **reference-bas
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 # obtain PPG-DaLiA first: see data/README.md
-pytest                                 # 122 tests; 13 need the dataset and skip without it
+pytest                                 # 160 tests; 13 need the dataset and skip without it
 python -m src.eval.report_baselines    # the three baselines plus b2-zp
 python -m src.eval.stage4              # masking and tracking ablation (~4 min)
 python -m src.eval.viterbi_eval        # Viterbi against the greedy tracker (~6 min)
 python -m src.eval.diagnostics         # surviving-peak and error-persistence diagnostics
 python -m src.eval.stage5              # strata, agreement, and the Stage 5 figures
 PPG_TAPER=1 python -m src.eval.stage4  # the same pipeline with a Hann window
+python -m src.edge.fold_configs        # Week 7: record each fold's configuration, reconciled to 14.704 (~4 min)
+python -m src.edge.evaluate            # the pipeline under causal, float32 and fixed-point arithmetic (~10 min)
+python -m src.edge.burst               # five-minute duty cycling: accuracy against burst length
+python -m src.edge.latency             # per-window latency on one thread, and the Cortex-M4F operation count
+python -m src.edge.budget              # memory and the two-year battery budget
+python -m src.edge.write_docs          # docs/edge-budget.md and the README section above
 ```
 
 The first real-data run unpickles all 15 subjects (~23 GB) and builds a 3.5 GB cache in about 40 s; later runs read the cache.
@@ -85,6 +101,7 @@ The first real-data run unpickles all 15 subjects (~23 GB) and builds a 3.5 GB c
 - [docs/viterbi-notes.md](docs/viterbi-notes.md) — what the HMM formulation assumes, and how it differs from Kalman and TROIKA
 - [docs/taper-comparison.md](docs/taper-comparison.md) — the Hann taper, measured and not adopted
 - [docs/s5-investigation.md](docs/s5-investigation.md) — why one subject is three times harder than the rest
+- [docs/edge-budget.md](docs/edge-budget.md) — the pipeline on a wrist: fixed point, latency, memory, duty cycling and a battery budget (Week 7)
 - [docs/decisions.md](docs/decisions.md) — every design decision, its evidence, what was rejected, and the open items
 
 ## References

@@ -1,0 +1,7 @@
+variant,pooled_mae,pooled_mape,minus_reference,minus_reference_ci_lo,minus_reference_ci_hi,subjects_worse_than_reference,minus_causal_f64,minus_causal_f64_ci_lo,minus_causal_f64_ci_hi,subjects_worse_than_causal_f64
+reference,14.704,14.325,0.0,0.0,0.0,0,0.436,-0.309,1.196,9
+causal_f64,14.268,13.906,-0.436,-1.127,0.274,6,0.0,0.0,0.0,0
+causal_f32,14.268,13.906,-0.436,-1.167,0.301,6,0.0,0.0,0.0,0
+q15,15.082,14.706,0.378,-1.092,2.143,6,0.815,-0.754,2.514,10
+q15_state16,17.121,17.026,2.417,0.571,4.548,11,2.853,0.99,5.135,12
+q8,14.511,14.234,-0.193,-1.261,0.996,6,0.243,-0.874,1.493,9

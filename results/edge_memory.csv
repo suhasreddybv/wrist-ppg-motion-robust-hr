@@ -1,0 +1,9 @@
+item,float32,q15,q8
+"PPG window ring buffer, 512 samples",2048,1024,512
+"real-FFT input and output buffers, 4096 points (reused for the ACC FFTs)",32768,24576,24576
+"ACC window, 3 axes (64 Hz resampled; q8 keeps the native 32 Hz, 1/64 g)",6144,3072,768
+"motion power spectrum, 1025 bins",4100,2050,1025
+"in-band PPG spectrum and notch gains, 2 x 231 bins",1848,924,462
+band-pass state (4 biquads) and tracker history (15),92,124,124
+RAM total,47000,31770,27467
+FFT tables in flash (CMSIS-DSP arm_common_tables.h sizes),60368,47936,47936
