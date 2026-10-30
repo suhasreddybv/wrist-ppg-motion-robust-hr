@@ -457,3 +457,10 @@ Every number here is copied from a committed results file, test or script output
 - **Why it exists:** five entries — D-031, D-035, D-036, D-038 and D-049 — were left marked `open` after their successors landed, and the inconsistency survived the Week 3 close-out review. It was found the next morning by a Part A audit, not by reading the file.
 - **Verified by reintroducing the bug:** marking D-035 `open` again while D-051 still claims to close it makes two independent checks fail and name both entries. The guard was not written merely to pass on a log that was already clean.
 - **Also copied into `cgm-forecast-conformal`**, so that log starts with the guard in place rather than acquiring one after the same failure.
+
+### D-056 · The shared ship script and a pre-push guard, before Week 7 touches the code
+- **Date / commit:** 2026-10-29 · `pending`
+- **Status:** adopted
+- **Decision:** `scripts/ship.sh` — the gated ship sequence shared, byte-identical, with `cgm-forecast-conformal` and `nir-glucose-reproduction` (SHA-256 prefix `8b255cbec12d278b`) — runs the data-free suite under `set -euo pipefail` with every repository's dataset hidden (`PPG_DALIA_ROOT=/nonexistent` among them), commits, pushes, waits for CI and stamps this log's `pending` entries with the commit hash. `.pre-commit-config.yaml` gains the pre-push hook those repositories carry: a push is refused when the decision-log guard or any data-free test fails. Installed locally with `pre-commit install --hook-type pre-push`.
+- **Evidence:** the data-free suite here is 109 passed, 13 skipped (the dataset-backed tests) with the dataset hidden.
+- **Why now:** in two other repositories a hand-written ship chain gated the commit on `tail`'s exit status rather than pytest's and pushed failing guards; the rule since is to copy the one script, never to retype the sequence. Week 7 adds code to a repository that had been closed (D-054), so the guard goes in first.

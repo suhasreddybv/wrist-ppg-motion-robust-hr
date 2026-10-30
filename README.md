@@ -66,7 +66,7 @@ In Charlton's taxonomy of wearable heart-rate algorithms this is **reference-bas
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 # obtain PPG-DaLiA first: see data/README.md
-pytest                                 # 113 tests; 13 need the dataset and skip without it
+pytest                                 # 122 tests; 13 need the dataset and skip without it
 python -m src.eval.report_baselines    # the three baselines plus b2-zp
 python -m src.eval.stage4              # masking and tracking ablation (~4 min)
 python -m src.eval.viterbi_eval        # Viterbi against the greedy tracker (~6 min)
