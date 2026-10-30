@@ -459,7 +459,7 @@ Every number here is copied from a committed results file, test or script output
 - **Also copied into `cgm-forecast-conformal`**, so that log starts with the guard in place rather than acquiring one after the same failure.
 
 ### D-056 · The shared ship script and a pre-push guard, before Week 7 touches the code
-- **Date / commit:** 2026-10-29 · `pending`
+- **Date / commit:** 2026-10-29 · `cc212ee`
 - **Status:** adopted
 - **Decision:** `scripts/ship.sh` — the gated ship sequence shared, byte-identical, with `cgm-forecast-conformal` and `nir-glucose-reproduction` (SHA-256 prefix `8b255cbec12d278b`) — runs the data-free suite under `set -euo pipefail` with every repository's dataset hidden (`PPG_DALIA_ROOT=/nonexistent` among them), commits, pushes, waits for CI and stamps this log's `pending` entries with the commit hash. `.pre-commit-config.yaml` gains the pre-push hook those repositories carry: a push is refused when the decision-log guard or any data-free test fails. Installed locally with `pre-commit install --hook-type pre-push`.
 - **Evidence:** the data-free suite here is 109 passed, 13 skipped (the dataset-backed tests) with the dataset hidden.
